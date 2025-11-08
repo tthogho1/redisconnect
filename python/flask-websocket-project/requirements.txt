@@ -1,0 +1,6 @@
+Flask
+Flask-SocketIO
+eventlet
+redis
+python-dotenv
+flasgger

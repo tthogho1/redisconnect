@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebSocket Location Test</title>
+  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 2em;
+    }
+
+    label {
+      display: block;
+      margin-top: 1em;
+    }
+
+    #output {
+      background: #f8f8f8;
+      border: 1px solid #ccc;
+      padding: 1em;
+      height: 200px;
+      overflow: auto;
+    }
+  </style>
+</head>
+<body>
+  <h2>WebSocket User Location Test</h2>
+  <form id="wsForm">
+    <label>
+      Name:
+      <input type="text" id="name" required>
+    </label>
+    <label>
+      Latitude:
+      <input type="number" id="latitude" step="any" required>
+    </label>
+    <label>
+      Longitude:
+      <input type="number" id="longitude" step="any" required>
+    </label>
+    <label>
+      User ID (optional):
+      <input type="text" id="user_id">
+    </label>
+    <button type="submit">Send Location</button>
+  </form>
+  <hr>
+  <div>
+    <h3>WebSocket Events</h3>
+    <pre id="output"></pre>
+  </div>
+  <script>
+    const output = document.getElementById('output');
+    function log(msg) {
+      output.textContent += msg + '\n';
+      output.scrollTop = output.scrollHeight;
+    }
+
+    // Change port if needed
+    const socket = io('http://localhost:5000');
+
+    socket.on('connect', () => log('Connected to WebSocket server.'));
+    socket.on('disconnect', () => log('Disconnected.'));
+    socket.on('location_ack', data => log('ACK: ' + JSON.stringify(data)));
+    socket.on('user_added', data => log('User added: ' + JSON.stringify(data)));
+    socket.on('user_updated', data => log('User updated: ' + JSON.stringify(data)));
+    socket.on('user_deleted', data => log('User deleted: ' + JSON.stringify(data)));
+    socket.on('all_users', data => log('All users: ' + JSON.stringify(data)));
+    socket.on('response', data => log('Server: ' + JSON.stringify(data)));
+
+    document.getElementById('wsForm').onsubmit = function (e) {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const latitude = parseFloat(document.getElementById('latitude').value);
+      const longitude = parseFloat(document.getElementById('longitude').value);
+      const user_id = document.getElementById('user_id').value.trim();
+      const payload = { name, latitude, longitude };
+      if (user_id) payload.id = user_id;
+      socket.emit('location', payload);
+      log('Sent: ' + JSON.stringify(payload));
+    };
+  </script>
+</body>
+</html>

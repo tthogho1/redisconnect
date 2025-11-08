@@ -1,0 +1,16 @@
+{
+  "name": "redisconnect-typescript",
+  "version": "1.0.0",
+  "description": "React application with OpenStreetMap and WebSocket",
+  "scripts": {
+    "start": "cd react-map-app && npm start",
+    "build": "cd react-map-app && npm run build",
+    "test": "cd react-map-app && npm test",
+    "install-deps": "cd react-map-app && npm install"
+  },
+  "dependencies": {
+    "@types/leaflet": "^1.9.21",
+    "leaflet": "^1.9.4",
+    "react-leaflet": "^5.0.0"
+  }
+}
