@@ -30,6 +30,9 @@ r = redis.Redis(connection_pool=pool)
 
 GEO_KEY = "user_locations"
 
+# User SID mapping for private messaging
+user_sid_map = {}  # { user_id: sid }
+
 
 def get_all_users_from_redis():
     """Helper function to retrieve all users from Redis GEO index"""
@@ -48,6 +51,22 @@ def handle_connect():
     emit("response", {"message": "Connected to WebSocket!"})
 
 
+@socketio.on("register")
+def handle_register(data):
+    """Register user's socket ID for private messaging.
+    Expected JSON fields:
+      user_id: string (required) - User identifier
+    """
+    user_id = data.get("user_id")
+    if not user_id:
+        emit("register_ack", {"error": "user_id is required"})
+        return
+
+    user_sid_map[user_id] = request.sid
+    print(f"User {user_id} registered with SID {request.sid}")
+    emit("register_ack", {"status": "ok", "user_id": user_id})
+
+
 @socketio.on("message")
 def handle_message(data):
     emit("response", {"message": f"Received message: {data}"}, broadcast=True)
@@ -55,7 +74,108 @@ def handle_message(data):
 
 @socketio.on("disconnect")
 def handle_disconnect():
-    print("Client disconnected")
+    # Remove user from mapping on disconnect
+    disconnected_user = None
+    for user_id, sid in list(user_sid_map.items()):
+        if sid == request.sid:
+            disconnected_user = user_id
+            del user_sid_map[user_id]
+            break
+    print(f"Client disconnected: {disconnected_user or request.sid}")
+
+
+# Chat message handlers
+@socketio.on("chat_broadcast")
+def handle_chat_broadcast(data):
+    """Handle broadcast chat messages (sent to all users).
+    Expected JSON fields:
+      from: string (required) - Sender user ID
+      message: string (required) - Message content
+      timestamp: optional string - Message timestamp
+    """
+    print(f"[LOG] Received broadcast chat: {data}")
+    if not isinstance(data, dict):
+        emit("chat_error", {"error": "Payload must be JSON object"})
+        return
+
+    from_user = data.get("from")
+    message = data.get("message")
+
+    if not from_user or not message:
+        emit("chat_error", {"error": "from and message are required"})
+        return
+
+    # Get sender's name from Redis
+    user_info_json = r.get(f"user_info:{from_user}")
+    sender_name = from_user
+    if user_info_json:
+        user_info = json.loads(user_info_json)
+        sender_name = user_info.get("name", from_user)
+
+    broadcast_data = {
+        "type": "broadcast",
+        "from": from_user,
+        "from_name": sender_name,
+        "message": message,
+        "timestamp": data.get("timestamp"),
+    }
+
+    # Broadcast to all connected clients
+    socketio.emit("chat_message", broadcast_data)
+    print(f"Broadcast message from {sender_name}: {message}")
+
+
+@socketio.on("chat_private")
+def handle_chat_private(data):
+    """Handle private chat messages (sent to specific user).
+    Expected JSON fields:
+      from: string (required) - Sender user ID
+      to: string (required) - Recipient user ID
+      message: string (required) - Message content
+      timestamp: optional string - Message timestamp
+    """
+    print(f"[LOG] Received private chat: {data}")
+    if not isinstance(data, dict):
+        emit("chat_error", {"error": "Payload must be JSON object"})
+        return
+
+    from_user = data.get("from")
+    to_user = data.get("to")
+    message = data.get("message")
+
+    if not from_user or not to_user or not message:
+        emit("chat_error", {"error": "from, to, and message are required"})
+        return
+
+    # Get sender's name from Redis
+    user_info_json = r.get(f"user_info:{from_user}")
+    sender_name = from_user
+    if user_info_json:
+        user_info = json.loads(user_info_json)
+        sender_name = user_info.get("name", from_user)
+
+    # Get recipient's socket ID
+    to_sid = user_sid_map.get(to_user)
+    if not to_sid:
+        emit("chat_error", {"error": f"User {to_user} is not connected"})
+        return
+
+    private_data = {
+        "type": "private",
+        "from": from_user,
+        "from_name": sender_name,
+        "to": to_user,
+        "message": message,
+        "timestamp": data.get("timestamp"),
+    }
+
+    # Send to specific user
+    socketio.emit("chat_message", private_data, room=to_sid)
+
+    # Also send back to sender for confirmation
+    emit("chat_message", private_data)
+
+    print(f"Private message from {sender_name} to {to_user}: {message}")
 
 
 # WebSocket event to add/update user location
