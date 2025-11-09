@@ -34,6 +34,25 @@ GEO_KEY = "user_locations"
 user_sid_map = {}  # { user_id: sid }
 
 
+# --- 初期化時にHIGMAユーザをRedisへ登録 ---
+def register_initial_user():
+    user_id = "HIGMA"
+    latitude = 34.7642462
+    longitude = 137.3875706
+    user_info = {
+        "id": user_id,
+        "name": user_id,
+        "latitude": latitude,
+        "longitude": longitude,
+    }
+    # GEOADD
+    r.geoadd(GEO_KEY, (longitude, latitude, user_id))
+    # user_info保存
+    r.set(f"user_info:{user_id}", json.dumps(user_info))
+    position = r.geopos(GEO_KEY, user_id)
+    print(f"Registered initial user {user_id} at position {position}")
+
+
 def get_all_users_from_redis():
     """Helper function to retrieve all users from Redis GEO index"""
     all_members = r.zrange(GEO_KEY, 0, -1)
@@ -364,7 +383,7 @@ def create_user():
         return jsonify({"errors": errors}), 400
 
     # Store in geospatial index (member -> (lon, lat))
-    r.geoadd(GEO_KEY, {user_id: (lon, lat)})
+    r.geoadd(GEO_KEY, (lon, lat, user_id))
 
     # Store user info separately
     user_doc = {"id": user_id, "name": name, "latitude": lat, "longitude": lon}
@@ -426,4 +445,6 @@ if __name__ == "__main__":
     print("WebSocket endpoint: ws://localhost:{}/ (event: 'location')".format(app_port))
     print("HTTP POST /users, DELETE /users/<id> available.")
     print("Redis host:", HOST, "port:", PORT)
+    # アプリ起動時に一度だけ登録
+    register_initial_user()
     socketio.run(app, host="0.0.0.0", port=app_port, debug=True)

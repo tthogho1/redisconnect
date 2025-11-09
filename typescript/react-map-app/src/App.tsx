@@ -5,20 +5,6 @@ import L from 'leaflet';
 import io, { Socket } from 'socket.io-client';
 import './App.css';
 
-// Fix for default marker icon issue with webpack
-import icon from 'leaflet/dist/images/marker-icon.png';
-import iconShadow from 'leaflet/dist/images/marker-shadow.png';
-
-// Set default icon for any markers that don't specify a custom icon
-let DefaultIcon = L.icon({
-  iconUrl: icon,
-  shadowUrl: iconShadow,
-  iconSize: [25, 41],
-  iconAnchor: [12, 41],
-});
-
-L.Marker.prototype.options.icon = DefaultIcon;
-
 // Create custom colored icons for different users (separate from default)
 const createColoredIcon = (color: string) => {
   return L.divIcon({
@@ -58,8 +44,21 @@ const userColors = [
   '#FF3333', // Red
 ];
 
-// Function to get user icon by index
-const getUserIcon = (index: number) => {
+// Create custom image icon for HIGMA
+const createHigmaIcon = () => {
+  return L.icon({
+    iconUrl: '/channels4_profile.jpg',
+    iconSize: [40, 40],
+    iconAnchor: [20, 20],
+    popupAnchor: [0, -20],
+  });
+};
+
+// Function to get user icon by index or special icon for HIGMA
+const getUserIcon = (userId: string, index: number) => {
+  if (userId === 'HIGMA') {
+    return createHigmaIcon();
+  }
   const color = userColors[index % userColors.length];
   return createColoredIcon(color);
 };
@@ -423,7 +422,7 @@ function App() {
           <Marker
             key={user.id}
             position={[user.latitude, user.longitude]}
-            icon={getUserIcon(index)}
+            icon={getUserIcon(user.id, index)}
           >
             <Popup>
               <strong>{user.name}</strong>
