@@ -1,0 +1,3 @@
+[submodule "gosignaling"]
+	path = gosignaling
+	url = https://github.com/tthogho1/gosignaling.git
