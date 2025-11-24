@@ -5,6 +5,7 @@ import os
 import json
 import redis
 from dotenv import load_dotenv
+import requests
 
 load_dotenv(override=True)
 
@@ -17,6 +18,7 @@ HOST = os.getenv("HOST")
 PORT = int(os.getenv("PORT", "6379"))
 REDIS_USERNAME = os.getenv("REDIS_USERNAME")
 PASSWORD = os.getenv("PASSWORD")
+HIGMA_API_URL = os.getenv("HIGMA_API_URL", "http://localhost:5100/api/chat")
 
 pool = redis.ConnectionPool(
     host=HOST,
@@ -144,6 +146,47 @@ def handle_chat_broadcast(data):
     print(f"Broadcast message from {sender_name}: {message}")
 
 
+def send_message_to_higma(from_user: str, message: str, timestamp: str = None):
+    """Send message to HIGMA via external API and return response.
+
+    Args:
+        from_user: Sender user ID
+        message: Message content
+        timestamp: Optional message timestamp
+
+    Returns:
+        bool: True if successful, False otherwise (emits error on failure)
+    """
+
+    try:
+        # 外部APIへPOST
+        api_url = HIGMA_API_URL
+        payload = {"query": message}
+        response = requests.post(api_url, json=payload, timeout=10)
+
+        if response.status_code == 200:
+            api_response = response.json()
+            message = api_response.get("answer", "No response from HIGMA")
+            # APIからの応答をHIGMAからのメッセージとして送信者に返す
+            higma_reply = {
+                "type": "private",
+                "from": "HIGMA",
+                "from_name": "HIGMA",
+                "to": from_user,
+                "message": message,
+                "timestamp": timestamp,
+            }
+            emit("chat_message", higma_reply)
+            print(f"HIGMA replied to {from_user}: {higma_reply['message']}")
+            return True
+        else:
+            emit("chat_error", {"error": f"HIGMA API error: {response.status_code}"})
+            return False
+    except Exception as e:
+        emit("chat_error", {"error": f"Failed to contact HIGMA: {str(e)}"})
+        return False
+
+
 @socketio.on("chat_private")
 def handle_chat_private(data):
     """Handle private chat messages (sent to specific user).
@@ -164,6 +207,11 @@ def handle_chat_private(data):
 
     if not from_user or not to_user or not message:
         emit("chat_error", {"error": "from, to, and message are required"})
+        return
+
+    # HIGMAへのメッセージの場合、外部APIにPOSTして応答を返す
+    if to_user == "HIGMA":
+        send_message_to_higma(from_user, message, data.get("timestamp"))
         return
 
     # Get sender's name from Redis

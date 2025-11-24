@@ -4,6 +4,7 @@ import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import io, { Socket } from 'socket.io-client';
 import './App.css';
+import { VideoCallPopup } from './components/VideoCall/VideoCallPopup';
 
 // Create custom colored icons for different users (separate from default)
 const createColoredIcon = (color: string) => {
@@ -94,6 +95,9 @@ function App() {
   const [showChat, setShowChat] = useState<boolean>(false);
   const chatEndRef = useRef<HTMLDivElement>(null);
 
+  // Video call state
+  const [showVideoCall, setShowVideoCall] = useState<boolean>(false);
+
   // Default center position (Tokyo)
   const defaultPosition: [number, number] = [35.6762, 139.6503];
 
@@ -108,7 +112,7 @@ function App() {
 
   // WebSocket connection - only once
   useEffect(() => {
-    const socket = io('http://localhost:5000');
+    const socket = io(process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5000');
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -459,6 +463,30 @@ function App() {
         </button>
       )}
 
+      {/* Video Call Toggle Button */}
+      {currentLocation && (
+        <button
+          onClick={() => setShowVideoCall(!showVideoCall)}
+          style={{
+            position: 'fixed',
+            bottom: '20px',
+            right: '200px',
+            padding: '15px 25px',
+            backgroundColor: '#4CAF50',
+            color: 'white',
+            border: 'none',
+            borderRadius: '50px',
+            cursor: 'pointer',
+            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
+            fontSize: '16px',
+            fontWeight: 'bold',
+            zIndex: 1000,
+          }}
+        >
+          📹 {showVideoCall ? 'Hide Video' : 'Video Call'}
+        </button>
+      )}
+
       {/* Chat Window */}
       {showChat && currentLocation && (
         <div
@@ -584,6 +612,15 @@ function App() {
             </button>
           </div>
         </div>
+      )}
+
+      {/* Video Call Popup */}
+      {showVideoCall && currentLocation && (
+        <VideoCallPopup
+          wsUrl={process.env.REACT_APP_SIGNALING_URL || 'ws://localhost:8080/ws'}
+          defaultRoomId={userName || 'default-room'}
+          onClose={() => setShowVideoCall(false)}
+        />
       )}
     </div>
   );
