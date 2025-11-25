@@ -112,7 +112,11 @@ function App() {
 
   // WebSocket connection - only once
   useEffect(() => {
-    const socket = io(process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5000');
+    //const socket = io(process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5000');
+    const socket = io(process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5000', {
+      transports: ['websocket'],
+      upgrade: false,
+    });
     socketRef.current = socket;
 
     socket.on('connect', () => {
@@ -140,7 +144,16 @@ function App() {
     // Listen for user updated
     socket.on('user_updated', (user: User) => {
       console.log('User updated:', user);
-      setUsers(prevUsers => prevUsers.map(u => (u.id === user.id ? user : u)));
+      setUsers(prevUsers => {
+        const exists = prevUsers.some(u => u.id === user.id);
+        if (exists) {
+          // Update existing user
+          return prevUsers.map(u => (u.id === user.id ? user : u));
+        } else {
+          // Add new user if not exists
+          return [...prevUsers, user];
+        }
+      });
     });
 
     // Listen for user deleted
@@ -193,6 +206,7 @@ function App() {
               setCurrentLocation(newLocation);
 
               const locationData = {
+                id: userName,
                 name: userName,
                 latitude: newLocation.lat,
                 longitude: newLocation.lon,
@@ -208,6 +222,7 @@ function App() {
               setCurrentLocation(newLocation);
 
               const locationData = {
+                id: userName,
                 name: userName,
                 latitude: newLocation.lat,
                 longitude: newLocation.lon,
@@ -265,6 +280,7 @@ function App() {
           if (socketRef.current) {
             const userId = userName; // Use userName as userId
             socketRef.current.emit('location', {
+              id: userName,
               name: userName,
               latitude: currentPos.lat,
               longitude: currentPos.lon,
