@@ -117,6 +117,10 @@ func main() {
 	// Setup Gin router
 	router := gin.Default()
 
+  // staticフォルダ公開
+	router.Static("/static", "./static/static")
+  router.Static("/map", "./static")
+
 	// CORS middleware
 	router.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")

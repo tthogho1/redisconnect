@@ -64,3 +64,6 @@ logs/
 
 # Redis
 dump.rdb
+
+# Go static files
+go/static/

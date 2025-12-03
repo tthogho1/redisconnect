@@ -45,20 +45,18 @@ const userColors = [
   '#FF3333', // Red
 ];
 
-// Create custom image icon for HIGMA
-const createHigmaIcon = () => {
-  return L.icon({
-    iconUrl: '/channels4_profile.jpg',
-    iconSize: [40, 40],
-    iconAnchor: [20, 20],
-    popupAnchor: [0, -20],
-  });
-};
+// HIGMAアイコン用のURLを.envから取得
+const higmaIconUrl = process.env.REACT_APP_HIGMA_ICON_PATH || '/channels4_profile.jpg';
 
 // Function to get user icon by index or special icon for HIGMA
 const getUserIcon = (userId: string, index: number) => {
   if (userId === 'HIGMA') {
-    return createHigmaIcon();
+    return L.icon({
+      iconUrl: higmaIconUrl,
+      iconSize: [40, 40],
+      iconAnchor: [20, 20],
+      popupAnchor: [0, -20],
+    });
   }
   const color = userColors[index % userColors.length];
   return createColoredIcon(color);
