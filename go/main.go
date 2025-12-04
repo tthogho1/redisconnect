@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -116,6 +117,10 @@ func main() {
 
 	// Setup Gin router
 	router := gin.Default()
+
+  // staticフォルダ公開
+	router.Static("/static", "./static/static")
+  router.Static("/map", "./static")
 
 	// CORS middleware
 	router.Use(func(c *gin.Context) {
@@ -412,6 +417,9 @@ func handleChatPrivate(socket *socketio.Socket, event *socketio.EventPayload) {
 	// Check if recipient is HIGMA
 	if toUser == "HIGMA" {
 		go sendMessageToHIGMA(socket, fromUser, message, timestamp)
+		// Don't try to deliver to HIGMA socket since it's a virtual user
+		log.Printf("Message sent to HIGMA API from %s", fromUser)
+		return
 	}
 
 	// Send to recipient
@@ -447,23 +455,51 @@ func sendMessageToHIGMA(socket *socketio.Socket, fromUser, message, timestamp st
 
 	reqBody := map[string]interface{}{
 		"sender":  fromUser,
-		"message": message,
+		"query": message,
 	}
 
-	_, err := json.Marshal(reqBody)
+	jsonData, err := json.Marshal(reqBody)
 	if err != nil {
 		log.Printf("Error marshaling HIGMA request: %v", err)
 		return
 	}
 
-	resp, err := http.Post(higmaAPIURL, "application/json", nil)
+	resp, err := http.Post(higmaAPIURL, "application/json", bytes.NewBuffer(jsonData))
 	if err != nil {
 		log.Printf("Error calling HIGMA API: %v", err)
 		return
 	}
 	defer resp.Body.Close()
 
-	log.Printf("HIGMA API called successfully for message from %s", fromUser)
+	log.Printf("HIGMA API called successfully for message from %s (status: %d)", fromUser, resp.StatusCode)
+
+	// Read response body
+	var responseData map[string]interface{}
+	if err := json.NewDecoder(resp.Body).Decode(&responseData); err != nil {
+		log.Printf("Error decoding HIGMA response: %v", err)
+		return
+	}
+
+	// Extract reply message from response
+	var replyMessage string
+	if reply, ok := responseData["answer"].(string); ok {
+		replyMessage = reply
+	} else {
+		log.Printf("No reply message found in HIGMA response: %+v", responseData)
+		return
+	}
+
+	// Send HIGMA's reply back to the user
+	socket.Emit("chat_message", map[string]interface{}{
+		"type":      "private",
+		"from":      "HIGMA",
+		"from_name": "HIGMA",
+		"to":        fromUser,
+		"message":   replyMessage,
+		"timestamp": time.Now().Format(time.RFC3339),
+	})
+
+	log.Printf("HIGMA reply sent to %s: %s", fromUser, replyMessage)
 }
 
 func handleDisconnect(socketID string) {

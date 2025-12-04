@@ -64,3 +64,8 @@ logs/
 
 # Redis
 dump.rdb
+
+# Go
+go/static/
+go/*.exe
+go/__debug_bin*
