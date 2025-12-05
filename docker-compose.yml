@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  go-server:
+    build:
+      context: .
+      dockerfile: go/Dockerfile
+    container_name: redisconnect-go-server
+    ports:
+      - "5000:5000"
+    environment:
+      - APP_PORT=5000
+      - HOST=${REDIS_HOST}
+      - PORT=${REDIS_PORT:-6379}
+      - PASSWORD=${REDIS_PASSWORD}
+      - REDIS_USERNAME=${REDIS_USERNAME:-default}
+      - HIGMA_API_URL=${HIGMA_API_URL}
+    networks:
+      - redisconnect-network
+    restart: unless-stopped
+
+  gosignaling:
+    build:
+      context: ./gosignaling
+      dockerfile: Dockerfile
+    container_name: redisconnect-gosignaling
+    ports:
+      - "8080:8080"
+    command: ["/app/gosignaling", "-addr", "0.0.0.0", "-port", "8080"]
+    networks:
+      - redisconnect-network
+    restart: unless-stopped
+
+networks:
+  redisconnect-network:
+    driver: bridge
+
+volumes:
+  redis-data:
+    driver: local
