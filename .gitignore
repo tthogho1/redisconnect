@@ -69,3 +69,7 @@ dump.rdb
 go/static/
 go/*.exe
 go/__debug_bin*
+
+# Docker local configuration
+docker-compose.local.yml
+docker-compose.override.yml

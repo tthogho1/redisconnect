@@ -1,0 +1,47 @@
+# Git
+.git/
+.gitignore
+.gitmodules
+
+# Environment
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+
+# Logs
+*.log
+logs/
+
+# Redis
+dump.rdb
+
+# Node modules (will be installed in Docker)
+typescript/react-map-app/node_modules/
+typescript/react-map-app/build/
+
+# Go build artifacts
+go/*.exe
+go/__debug_bin*
+go/static/
+
+gosignaling/*.exe
+gosignaling/__debug_bin*
+
+# Documentation
+README.md
+*.md
