@@ -1,13 +1,6 @@
-.App {
-  padding: 20px;
-  font-family: Arial, sans-serif;
-}
-
-.App h1 {
-  text-align: center;
-  color: #333;
-  margin-bottom: 20px;
-}
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
 .leaflet-container {
   border-radius: 8px;

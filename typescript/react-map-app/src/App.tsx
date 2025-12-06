@@ -1,82 +1,16 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 import io, { Socket } from 'socket.io-client';
 import './App.css';
 import { VideoCallPopup } from './components/VideoCall/VideoCallPopup';
-
-// Create custom colored icons for different users (separate from default)
-const createColoredIcon = (color: string) => {
-  return L.divIcon({
-    className: 'custom-div-icon',
-    html: `
-      <div style="
-        background-color: ${color};
-        width: 30px;
-        height: 30px;
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: white;
-        font-size: 14px;
-      ">📍</div>
-    `,
-    iconSize: [30, 30],
-    iconAnchor: [15, 15],
-  });
-};
-
-// Color palette for different users
-const userColors = [
-  '#FF5733', // Red-Orange
-  '#33FF57', // Green
-  '#3357FF', // Blue
-  '#FF33F5', // Pink
-  '#F5FF33', // Yellow
-  '#33F5FF', // Cyan
-  '#FF8C33', // Orange
-  '#8C33FF', // Purple
-  '#33FF8C', // Mint
-  '#FF3333', // Red
-];
-
-// HIGMAアイコン用のURLを.envから取得
-const higmaIconUrl = process.env.REACT_APP_HIGMA_ICON_PATH || '/channels4_profile.jpg';
-
-// Function to get user icon by index or special icon for HIGMA
-const getUserIcon = (userId: string, index: number) => {
-  if (userId === 'HIGMA') {
-    return L.icon({
-      iconUrl: higmaIconUrl,
-      iconSize: [40, 40],
-      iconAnchor: [20, 20],
-      popupAnchor: [0, -20],
-    });
-  }
-  const color = userColors[index % userColors.length];
-  return createColoredIcon(color);
-};
-
-interface User {
-  id: string;
-  name: string;
-  latitude: number;
-  longitude: number;
-}
-
-interface ChatMessage {
-  type: 'broadcast' | 'private';
-  from: string;
-  from_name: string;
-  to?: string;
-  message: string;
-  timestamp?: string;
-}
+import { MapBoundsTracker, MapBoundsDisplay } from './components/Map';
+import { ChatWindow } from './components/Chat';
+import { LocationControl } from './components/LocationControl';
+import { MapBounds } from './types/map';
+import { User, ChatMessage } from './types/user';
+import { getUserIcon } from './utils/mapIcons';
+import { generateRandomLocation, DEFAULT_POSITION } from './utils/locationUtils';
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
@@ -86,27 +20,17 @@ function App() {
   const [intervalSeconds, setIntervalSeconds] = useState<number>(5);
   const socketRef = useRef<Socket | null>(null);
 
+  // Map bounds state
+  const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
+
   // Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
   const [chatInput, setChatInput] = useState<string>('');
   const [selectedUser, setSelectedUser] = useState<string>('broadcast');
   const [showChat, setShowChat] = useState<boolean>(false);
-  const chatEndRef = useRef<HTMLDivElement>(null);
 
   // Video call state
   const [showVideoCall, setShowVideoCall] = useState<boolean>(false);
-
-  // Default center position (Tokyo)
-  const defaultPosition: [number, number] = [35.6762, 139.6503];
-
-  // Generate random location near current position
-  const generateRandomLocation = (baseLat: number, baseLon: number) => {
-    const randomOffset = 0.01; // ~1km range
-    return {
-      lat: baseLat + (Math.random() - 0.5) * randomOffset,
-      lon: baseLon + (Math.random() - 0.5) * randomOffset,
-    };
-  };
 
   // WebSocket connection - only once
   useEffect(() => {
@@ -181,11 +105,6 @@ function App() {
       socket.disconnect();
     };
   }, []); // Empty dependency array - connect only once
-
-  // Auto-scroll chat to bottom
-  useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [chatMessages]);
 
   // Periodic location updates - separate effect
   useEffect(() => {
@@ -294,7 +213,7 @@ function App() {
             `位置情報の取得に失敗しました: ${error.message}\nデフォルト位置（東京）を使用します。`
           );
           // Fallback to default location
-          const initialLocation = generateRandomLocation(defaultPosition[0], defaultPosition[1]);
+          const initialLocation = generateRandomLocation(DEFAULT_POSITION[0], DEFAULT_POSITION[1]);
           setCurrentLocation(initialLocation);
 
           // Register user for chat even with default location
@@ -311,7 +230,7 @@ function App() {
       );
     } else {
       alert('このブラウザは位置情報取得に対応していません。デフォルト位置を使用します。');
-      const initialLocation = generateRandomLocation(defaultPosition[0], defaultPosition[1]);
+      const initialLocation = generateRandomLocation(DEFAULT_POSITION[0], DEFAULT_POSITION[1]);
       setCurrentLocation(initialLocation);
 
       // Register user for chat
@@ -352,90 +271,34 @@ function App() {
   };
 
   return (
-    <div className="App">
-      <h1>OpenStreetMap with WebSocket</h1>
-      <div style={{ marginBottom: '10px' }}>
+    <div className="App p-5 font-sans">
+      <h1 className="text-center text-gray-800 mb-5 text-2xl font-bold">
+        OpenStreetMap with WebSocket
+      </h1>
+      <div className="mb-2.5">
         Status: {connected ? '🟢 Connected' : '🔴 Disconnected'} | Users: {users.length}
       </div>
 
-      <div
-        style={{
-          marginBottom: '20px',
-          padding: '15px',
-          backgroundColor: '#f5f5f5',
-          borderRadius: '8px',
-        }}
-      >
-        <h3>Location Tracking Control</h3>
-        <div style={{ marginBottom: '10px' }}>
-          <label>
-            Your Name:
-            <input
-              type="text"
-              value={userName}
-              onChange={e => setUserName(e.target.value)}
-              placeholder="Enter your name"
-              style={{ marginLeft: '10px', padding: '5px' }}
-            />
-          </label>
-        </div>
-        <div style={{ marginBottom: '10px' }}>
-          <label>
-            Update Interval (seconds):
-            <input
-              type="number"
-              value={intervalSeconds}
-              onChange={e => setIntervalSeconds(Number(e.target.value))}
-              min="1"
-              max="60"
-              style={{ marginLeft: '10px', padding: '5px', width: '60px' }}
-            />
-          </label>
-        </div>
-        <div>
-          {!currentLocation ? (
-            <button
-              onClick={handleStartTracking}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              Start Tracking
-            </button>
-          ) : (
-            <button
-              onClick={handleStopTracking}
-              style={{
-                padding: '10px 20px',
-                backgroundColor: '#f44336',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              Stop Tracking
-            </button>
-          )}
-          {currentLocation && (
-            <span style={{ marginLeft: '15px', color: '#4CAF50' }}>
-              📍 Tracking active (Lat: {currentLocation.lat.toFixed(4)}, Lon:{' '}
-              {currentLocation.lon.toFixed(4)})
-            </span>
-          )}
-        </div>
-      </div>
+      {/* Map Bounds Display */}
+      <MapBoundsDisplay bounds={mapBounds} />
 
-      <MapContainer center={defaultPosition} zoom={13} style={{ height: '600px', width: '100%' }}>
+      {/* Location Tracking Control */}
+      <LocationControl
+        userName={userName}
+        onUserNameChange={setUserName}
+        intervalSeconds={intervalSeconds}
+        onIntervalChange={setIntervalSeconds}
+        currentLocation={currentLocation}
+        onStartTracking={handleStartTracking}
+        onStopTracking={handleStopTracking}
+      />
+
+      <MapContainer center={DEFAULT_POSITION} zoom={13} style={{ height: '600px', width: '100%' }}>
         <TileLayer
           attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
           url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
         />
+        <MapBoundsTracker onBoundsChange={setMapBounds} />
         {users.map((user, index) => (
           <Marker
             key={user.id}
@@ -457,21 +320,7 @@ function App() {
       {currentLocation && (
         <button
           onClick={() => setShowChat(!showChat)}
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '20px',
-            padding: '15px 25px',
-            backgroundColor: '#2196F3',
-            color: 'white',
-            border: 'none',
-            borderRadius: '50px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            zIndex: 1000,
-          }}
+          className="fixed bottom-5 right-5 px-6 py-4 bg-blue-500 text-white rounded-full cursor-pointer shadow-lg text-base font-bold hover:bg-blue-600 z-[1000]"
         >
           💬 {showChat ? 'Hide Chat' : 'Show Chat'}
         </button>
@@ -481,21 +330,7 @@ function App() {
       {currentLocation && (
         <button
           onClick={() => setShowVideoCall(!showVideoCall)}
-          style={{
-            position: 'fixed',
-            bottom: '20px',
-            right: '200px',
-            padding: '15px 25px',
-            backgroundColor: '#4CAF50',
-            color: 'white',
-            border: 'none',
-            borderRadius: '50px',
-            cursor: 'pointer',
-            boxShadow: '0 4px 8px rgba(0,0,0,0.2)',
-            fontSize: '16px',
-            fontWeight: 'bold',
-            zIndex: 1000,
-          }}
+          className="fixed bottom-5 right-[200px] px-6 py-4 bg-green-500 text-white rounded-full cursor-pointer shadow-lg text-base font-bold hover:bg-green-600 z-[1000]"
         >
           📹 {showVideoCall ? 'Hide Video' : 'Video Call'}
         </button>
@@ -503,129 +338,16 @@ function App() {
 
       {/* Chat Window */}
       {showChat && currentLocation && (
-        <div
-          style={{
-            position: 'fixed',
-            bottom: '80px',
-            right: '20px',
-            width: '350px',
-            height: '500px',
-            backgroundColor: 'white',
-            border: '1px solid #ccc',
-            borderRadius: '8px',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-            display: 'flex',
-            flexDirection: 'column',
-            zIndex: 1000,
-          }}
-        >
-          {/* Chat Header */}
-          <div
-            style={{
-              padding: '15px',
-              backgroundColor: '#2196F3',
-              color: 'white',
-              borderTopLeftRadius: '8px',
-              borderTopRightRadius: '8px',
-              fontWeight: 'bold',
-            }}
-          >
-            💬 Chat
-          </div>
-
-          {/* User Selection */}
-          <div style={{ padding: '10px', borderBottom: '1px solid #eee' }}>
-            <label>
-              Send to:{' '}
-              <select
-                value={selectedUser}
-                onChange={e => setSelectedUser(e.target.value)}
-                style={{ padding: '5px', marginLeft: '5px' }}
-              >
-                <option value="broadcast">Everyone (Broadcast)</option>
-                {users
-                  .filter(u => u.name !== userName)
-                  .map(user => (
-                    <option key={user.id} value={user.id}>
-                      {user.name}
-                    </option>
-                  ))}
-              </select>
-            </label>
-          </div>
-
-          {/* Chat Messages */}
-          <div
-            style={{
-              flex: 1,
-              overflowY: 'auto',
-              padding: '10px',
-              backgroundColor: '#f9f9f9',
-            }}
-          >
-            {chatMessages.map((msg, index) => (
-              <div
-                key={index}
-                style={{
-                  marginBottom: '10px',
-                  padding: '8px 12px',
-                  backgroundColor: msg.from === userName ? '#E3F2FD' : '#FFF',
-                  borderRadius: '8px',
-                  border: '1px solid #ddd',
-                }}
-              >
-                <div style={{ fontSize: '12px', color: '#666', marginBottom: '4px' }}>
-                  <strong>{msg.from_name}</strong>
-                  {msg.type === 'private' && (
-                    <span style={{ color: '#FF5722', marginLeft: '5px' }}>(Private)</span>
-                  )}
-                  {msg.type === 'broadcast' && (
-                    <span style={{ color: '#4CAF50', marginLeft: '5px' }}>(Broadcast)</span>
-                  )}
-                </div>
-                <div>{msg.message}</div>
-                {msg.timestamp && (
-                  <div style={{ fontSize: '10px', color: '#999', marginTop: '4px' }}>
-                    {new Date(msg.timestamp).toLocaleTimeString()}
-                  </div>
-                )}
-              </div>
-            ))}
-            <div ref={chatEndRef} />
-          </div>
-
-          {/* Chat Input */}
-          <div
-            style={{ padding: '10px', borderTop: '1px solid #eee', display: 'flex', gap: '5px' }}
-          >
-            <input
-              type="text"
-              value={chatInput}
-              onChange={e => setChatInput(e.target.value)}
-              onKeyPress={e => e.key === 'Enter' && handleSendMessage()}
-              placeholder="Type a message..."
-              style={{
-                flex: 1,
-                padding: '8px',
-                border: '1px solid #ccc',
-                borderRadius: '4px',
-              }}
-            />
-            <button
-              onClick={handleSendMessage}
-              style={{
-                padding: '8px 15px',
-                backgroundColor: '#4CAF50',
-                color: 'white',
-                border: 'none',
-                borderRadius: '4px',
-                cursor: 'pointer',
-              }}
-            >
-              Send
-            </button>
-          </div>
-        </div>
+        <ChatWindow
+          messages={chatMessages}
+          chatInput={chatInput}
+          onInputChange={setChatInput}
+          onSendMessage={handleSendMessage}
+          selectedUser={selectedUser}
+          onUserSelect={setSelectedUser}
+          users={users}
+          currentUserName={userName}
+        />
       )}
 
       {/* Video Call Popup */}

@@ -1,0 +1,1 @@
+export { LocationControl } from './LocationControl';
