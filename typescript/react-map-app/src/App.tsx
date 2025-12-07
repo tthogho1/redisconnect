@@ -9,8 +9,11 @@ import { ChatWindow } from './components/Chat';
 import { LocationControl } from './components/LocationControl';
 import { MapBounds } from './types/map';
 import { User, ChatMessage } from './types/user';
+import { Airport } from './types/airport';
 import { getUserIcon } from './utils/mapIcons';
+import { createAirportIcon } from './utils/airportIcons';
 import { generateRandomLocation, DEFAULT_POSITION } from './utils/locationUtils';
+import { fetchAirportsInBounds } from './services/hasuraClient';
 
 function App() {
   const [users, setUsers] = useState<User[]>([]);
@@ -22,6 +25,9 @@ function App() {
 
   // Map bounds state
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
+
+  // Airports state
+  const [airports, setAirports] = useState<Airport[]>([]);
 
   // Chat state
   const [chatMessages, setChatMessages] = useState<ChatMessage[]>([]);
@@ -176,6 +182,24 @@ function App() {
     };
   }, [userName, currentLocation, intervalSeconds]); // Dependencies for location updates only
 
+  // Fetch airports when map bounds change
+  useEffect(() => {
+    if (mapBounds) {
+      const fetchAirports = async () => {
+        const airportsData = await fetchAirportsInBounds({
+          minLat: mapBounds.south,
+          maxLat: mapBounds.north,
+          minLon: mapBounds.west,
+          maxLon: mapBounds.east,
+        });
+        console.log('Fetched airports:', airportsData.length);
+        setAirports(airportsData);
+      };
+
+      fetchAirports();
+    }
+  }, [mapBounds]);
+
   const handleStartTracking = () => {
     if (!userName.trim()) {
       alert('Please enter your name');
@@ -276,7 +300,8 @@ function App() {
         OpenStreetMap with WebSocket
       </h1>
       <div className="mb-2.5">
-        Status: {connected ? '🟢 Connected' : '🔴 Disconnected'} | Users: {users.length}
+        Status: {connected ? '🟢 Connected' : '🔴 Disconnected'} | Users: {users.length} | Airports:{' '}
+        {airports.length}
       </div>
 
       {/* Map Bounds Display */}
@@ -311,6 +336,41 @@ function App() {
               ID: {user.id}
               <br />
               Lat: {user.latitude.toFixed(4)}, Lon: {user.longitude.toFixed(4)}
+            </Popup>
+          </Marker>
+        ))}
+        {airports.map((airport, index) => (
+          <Marker
+            key={`airport-${index}`}
+            position={[airport.latitude_deg, airport.longitude_deg]}
+            icon={createAirportIcon(airport.type)}
+          >
+            <Popup>
+              <strong>✈️ {airport.name}</strong>
+              <br />
+              Type: {airport.type}
+              <br />
+              {airport.iata_code && (
+                <>
+                  IATA: {airport.iata_code}
+                  <br />
+                </>
+              )}
+              {airport.icao_code && (
+                <>
+                  ICAO: {airport.icao_code}
+                  <br />
+                </>
+              )}
+              Lat: {airport.latitude_deg.toFixed(4)}, Lon: {airport.longitude_deg.toFixed(4)}
+              {airport.home_link && (
+                <>
+                  <br />
+                  <a href={airport.home_link} target="_blank" rel="noopener noreferrer">
+                    Website
+                  </a>
+                </>
+              )}
             </Popup>
           </Marker>
         ))}

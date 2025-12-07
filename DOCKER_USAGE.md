@@ -44,10 +44,10 @@ docker-compose down
 
 ## ファイル構成
 
-- `docker-compose.yml` - 本番用（環境変数を使用、Gitで管理）
-- `docker-compose.local.yml` - ローカル開発用（機密情報を含む、Gitで管理しない）
-- `.env` - 本番環境変数（Gitで管理しない）
+- `docker-compose.yml` - 本番用（環境変数を使用、Git で管理）
+- `docker-compose.local.yml` - ローカル開発用（機密情報を含む、Git で管理しない）
+- `.env` - 本番環境変数（Git で管理しない）
 
 ## 注意事項
 
-⚠️ **重要**: `docker-compose.local.yml` と `.env` ファイルには機密情報が含まれるため、Gitリポジトリにコミットしないでください。これらのファイルは `.gitignore` に追加されています。
+⚠️ **重要**: `docker-compose.local.yml` と `.env` ファイルには機密情報が含まれるため、Git リポジトリにコミットしないでください。これらのファイルは `.gitignore` に追加されています。
