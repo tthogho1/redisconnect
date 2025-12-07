@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: redisconnect-service
+  labels:
+    app: redisconnect
+spec:
+  type: NodePort
+  selector:
+    app: redisconnect
+  ports:
+    - name: http
+      port: 5000
+      targetPort: 5000
+      nodePort: 30500 # Accessible at http://localhost:30500
+      protocol: TCP
+    - name: ws
+      port: 8080
+      targetPort: 8080
+      nodePort: 30808 # Accessible at http://localhost:30808
+      protocol: TCP
