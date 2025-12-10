@@ -8,7 +8,7 @@ export async function fetchAirportsInBounds(variables: AirportsQueryVariables): 
     query {
       airports(
         where: {
-          type: { _neq: "heliport" }
+          type: { _nin: ["heliport", "closed"] }
           latitude_deg: { _gte: ${variables.minLat}, _lte: ${variables.maxLat} }
           longitude_deg: { _gte: ${variables.minLon}, _lte: ${variables.maxLon} }
         }
