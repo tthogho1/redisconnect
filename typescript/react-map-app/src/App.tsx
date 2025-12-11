@@ -22,6 +22,12 @@ function App() {
   const [currentLocation, setCurrentLocation] = useState<{ lat: number; lon: number } | null>(null);
   const [intervalSeconds, setIntervalSeconds] = useState<number>(5);
   const socketRef = useRef<Socket | null>(null);
+  const userNameRef = useRef<string>(''); // Keep track of current userName for socket listeners
+
+  // Update userNameRef when userName changes
+  useEffect(() => {
+    userNameRef.current = userName;
+  }, [userName]);
 
   // Map bounds state
   const [mapBounds, setMapBounds] = useState<MapBounds | null>(null);
@@ -93,7 +99,18 @@ function App() {
     // Listen for chat messages
     socket.on('chat_message', (data: ChatMessage) => {
       console.log('Chat message received:', data);
-      setChatMessages(prev => [...prev, data]);
+      // Only add messages from other users to avoid duplicates
+      // (we already add our own messages immediately when sending)
+      setChatMessages(prev => {
+        // Check if this is our own message by comparing from field with current userName
+        const isOwnMessage = data.from === userNameRef.current;
+        if (isOwnMessage) {
+          // Skip our own messages since we already added them locally
+          console.log('Skipping own message to avoid duplicate');
+          return prev;
+        }
+        return [...prev, data];
+      });
     });
 
     // Listen for chat errors
@@ -278,17 +295,44 @@ function App() {
       // Send broadcast message
       socketRef.current.emit('chat_broadcast', {
         from: userName,
+        from_name: userName,
         message: chatInput,
         timestamp,
       });
+
+      // Add message to local chat immediately
+      setChatMessages(prev => [
+        ...prev,
+        {
+          type: 'broadcast',
+          from: userName,
+          from_name: userName,
+          message: chatInput,
+          timestamp,
+        },
+      ]);
     } else {
       // Send private message
       socketRef.current.emit('chat_private', {
         from: userName,
+        from_name: userName,
         to: selectedUser,
         message: chatInput,
         timestamp,
       });
+
+      // Add message to local chat immediately
+      setChatMessages(prev => [
+        ...prev,
+        {
+          type: 'private',
+          from: userName,
+          from_name: userName,
+          to: selectedUser,
+          message: chatInput,
+          timestamp,
+        },
+      ]);
     }
 
     setChatInput('');
