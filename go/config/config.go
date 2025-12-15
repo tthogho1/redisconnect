@@ -24,15 +24,15 @@ func InitEnv() {
 
 // InitRedis initializes the Redis connection
 func InitRedis() {
-	host := os.Getenv("HOST")
+	host := os.Getenv("REDIS_HOST")
 	if host == "" {
 		host = "127.0.0.1"
 	}
-	port := os.Getenv("PORT")
+	port := os.Getenv("REDIS_PORT")
 	if port == "" {
 		port = "6379"
 	}
-	password := os.Getenv("PASSWORD")
+	password := os.Getenv("REDIS_PASSWORD")
 	username := os.Getenv("REDIS_USERNAME")
 
 	Rdb = redis.NewClient(&redis.Options{

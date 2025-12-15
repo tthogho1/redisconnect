@@ -46,8 +46,10 @@ function App() {
 
   // WebSocket connection - only once
   useEffect(() => {
-    //const socket = io(process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5000');
-    const socket = io(process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5000', {
+    const websocketUrl = process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5000';
+    console.log('🔌 Connecting to Socket.IO server:', websocketUrl);
+
+    const socket = io(websocketUrl, {
       transports: ['websocket'],
       upgrade: false,
     });
@@ -455,13 +457,19 @@ function App() {
       )}
 
       {/* Video Call Popup */}
-      {showVideoCall && currentLocation && (
-        <VideoCallPopup
-          wsUrl={process.env.REACT_APP_SIGNALING_URL || 'ws://localhost:8080/ws'}
-          defaultRoomId={userName || 'default-room'}
-          onClose={() => setShowVideoCall(false)}
-        />
-      )}
+      {showVideoCall &&
+        currentLocation &&
+        (() => {
+          const signalingUrl = process.env.REACT_APP_SIGNALING_URL || 'ws://localhost:8080/ws';
+          console.log('📹 Connecting to WebRTC signaling server:', signalingUrl);
+          return (
+            <VideoCallPopup
+              wsUrl={signalingUrl}
+              defaultRoomId={userName || 'default-room'}
+              onClose={() => setShowVideoCall(false)}
+            />
+          );
+        })()}
     </div>
   );
 }

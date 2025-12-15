@@ -107,6 +107,11 @@ func main() {
 		io.HttpHandler().ServeHTTP(c.Writer, c.Request)
 	})
 
+	// Health check endpoint for Fly.io
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(200, gin.H{"status": "ok"})
+	})
+
 	// REST API endpoints
 	router.GET("/users", handlers.GetAllUsers)
 	router.POST("/users", func(c *gin.Context) {
@@ -117,17 +122,17 @@ func main() {
 	})
 
 	// Start server
-	port := os.Getenv("APP_PORT")
+	port := os.Getenv("PORT")
 	if port == "" {
 		port = "5000"
 	}
 
 	log.Printf("\n==== Go WebSocket Server starting on port %s ====", port)
-	log.Printf("WebSocket endpoint: ws://localhost:%s/socket.io/", port)
+	log.Printf("WebSocket endpoint: ws://0.0.0.0:%s/socket.io/", port)
 	log.Printf("HTTP endpoints: GET/POST /users, DELETE /users/<id>")
-	log.Printf("Redis host: %s, port: %s", os.Getenv("HOST"), os.Getenv("PORT"))
+	log.Printf("Redis host: %s, port: %s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
 
-	if err := router.Run(":" + port); err != nil {
+	if err := router.Run("0.0.0.0:" + port); err != nil {
 		log.Fatal(err)
 	}
 }

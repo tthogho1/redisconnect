@@ -4,6 +4,9 @@
 .env.local
 .env.*.local
 
+# Production Dockerfile (use Dockerfile.example as template)
+Dockerfile
+
 # Python
 __pycache__/
 *.py[cod]

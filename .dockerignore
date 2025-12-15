@@ -7,6 +7,8 @@
 .env
 .env.local
 .env.*.local
+**/.env
+**/.env.local
 
 # IDE
 .vscode/
@@ -22,6 +24,7 @@ Thumbs.db
 .venv/
 __pycache__/
 *.py[cod]
+python/
 
 # Logs
 *.log
@@ -37,10 +40,21 @@ typescript/react-map-app/build/
 # Go build artifacts
 go/*.exe
 go/__debug_bin*
-go/static/
+go/server
 
+# gosignaling build artifacts (but keep webrtc-wasm source)
 gosignaling/*.exe
 gosignaling/__debug_bin*
+# Exclude gosignaling by default but include local wasm package used by React build
+gosignaling/**
+!gosignaling/webrtc-wasm/**
+gosignaling/webrtc-wasm/target
+
+# K8s and deployment files
+k8s/
+*.yaml
+*.yml
+!docker-compose.yml
 
 # Documentation
 README.md
