@@ -1,0 +1,89 @@
+# Multi-stage build for Go server with React frontend
+# Build context: repository root
+
+# Stage 1: Build React frontend
+FROM node:18-alpine AS frontend-builder
+
+WORKDIR /app
+
+# Copy local webrtc-wasm package (for file dependency install)
+COPY gosignaling/webrtc-wasm/pkg ./gosignaling/webrtc-wasm/pkg
+
+# Copy React app package files
+COPY typescript/react-map-app/package*.json ./typescript/react-map-app/
+
+# Install dependencies (will install webrtc-wasm from local file path)
+WORKDIR /app/typescript/react-map-app
+RUN npm ci
+
+# Copy React source code
+COPY typescript/react-map-app/ ./
+
+# Set environment variables for React build
+# NOTE: Replace these URLs with your actual deployment URLs
+ARG REACT_APP_WEBSOCKET_URL=https://your-app.example.com
+ARG REACT_APP_SIGNALING_URL=https://your-signaling.example.com/connect
+ARG REACT_APP_HIGMA_ICON_PATH=/map/channels4_profile.jpg
+
+ENV REACT_APP_WEBSOCKET_URL=${REACT_APP_WEBSOCKET_URL}
+ENV REACT_APP_SIGNALING_URL=${REACT_APP_SIGNALING_URL}
+ENV REACT_APP_HIGMA_ICON_PATH=${REACT_APP_HIGMA_ICON_PATH}
+
+# Build React app (env vars will be embedded)
+RUN npm run build
+
+# Stage 2: Build Go server
+FROM golang:1.22-alpine AS go-builder
+
+WORKDIR /app
+
+# Install build dependencies
+RUN apk add --no-cache git ca-certificates tzdata
+
+# Copy go.mod and go.sum
+COPY go/go.mod go/go.sum ./
+
+# Download dependencies
+RUN go mod download && go mod verify
+
+# Copy source code
+COPY go/ ./
+
+# Build Go binary with optimizations
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 \
+    go build -ldflags="-w -s" -a -installsuffix cgo -o server main.go
+
+# Stage 3: Final runtime image
+FROM alpine:latest
+
+# Install runtime dependencies and create non-root user
+RUN apk --no-cache add ca-certificates tzdata wget && \
+    addgroup -g 1000 appuser && \
+    adduser -D -u 1000 -G appuser appuser
+
+WORKDIR /app
+
+# Copy Go binary from builder
+COPY --from=go-builder /app/server .
+
+# Copy React build from frontend builder
+COPY --from=frontend-builder /app/typescript/react-map-app/build ./static
+
+# Verify static assets are present (debugging aid)
+RUN echo "Listing static assets:" && ls -la ./static && echo "Nested static dir:" && ls -la ./static/static || true
+
+# Change ownership
+RUN chown -R appuser:appuser /app
+
+# Switch to non-root user
+USER appuser
+
+# Expose port
+EXPOSE 5000
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD wget --no-verbose --tries=1 --spider http://localhost:5000/health || exit 1
+
+# Run the server
+CMD ["./server"]
