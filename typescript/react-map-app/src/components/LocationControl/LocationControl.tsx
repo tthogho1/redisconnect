@@ -43,7 +43,8 @@ export function LocationControl({
                 value={userName}
                 onChange={e => onUserNameChange(e.target.value)}
                 placeholder="Enter your name"
-                className="ml-2.5 p-1.5 border border-gray-300 rounded"
+                disabled={currentLocation !== null}
+                className="ml-2.5 p-1.5 border border-gray-300 rounded disabled:bg-gray-200 disabled:cursor-not-allowed"
               />
             </label>
           </div>
