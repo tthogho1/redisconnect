@@ -26,6 +26,7 @@ function App() {
   const [showVideoCall, setShowVideoCall] = useState<boolean>(false);
   const [showBounds, setShowBounds] = useState<boolean>(false);
   const [showLocationControl, setShowLocationControl] = useState<boolean>(true);
+  const [targetMapCenter, setTargetMapCenter] = useState<{ lat: number; lon: number } | null>(null);
   const userNameRef = useRef<string>('');
 
   // Update userNameRef when userName changes
@@ -96,20 +97,31 @@ function App() {
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
             <MapBoundsTracker onBoundsChange={setMapBounds} />
-            <MapCenterController center={initialMapCenter} zoom={15} />
+            <MapCenterController center={targetMapCenter || initialMapCenter} zoom={15} />
             <CurrentLocationMarker currentLocation={currentLocation} userName={userName} />
             <UserMarkers users={users.filter(u => u.id !== userName)} />
             <AirportMarkers airports={airports} />
           </MapContainer>
 
-          {/* Transparent Overlay Button */}
-          <button
-            className="absolute top-4 right-4 z-[1000] bg-white/30 hover:bg-white/50 backdrop-blur-md text-gray-800 p-3 rounded-full border border-white/40 shadow-lg transition-all duration-300 transform hover:scale-105"
-            onClick={() => console.log('Circle button clicked')}
-            title="Action Button"
-          >
-            <FaRegDotCircle className="w-6 h-6" />
-          </button>
+          {/* Move to Current Location Button */}
+          {currentLocation && (
+            <button
+              className="absolute top-4 right-4 z-[1000] bg-white/30 hover:bg-white/50 backdrop-blur-md text-gray-800 p-3 rounded-full border border-white/40 shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
+              onClick={() => {
+                if (currentLocation) {
+                  // Create a new object to trigger re-render even if same location
+                  setTargetMapCenter({ ...currentLocation });
+                  console.log('Moving map to current location:', currentLocation);
+                } else {
+                  console.log('No current location available');
+                }
+              }}
+              title="Move to Current Location"
+              disabled={!currentLocation}
+            >
+              <FaRegDotCircle className="w-6 h-6" />
+            </button>
+          )}
         </div>
 
         {/* Chat Toggle Button */}
