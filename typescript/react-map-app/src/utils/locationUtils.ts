@@ -15,4 +15,4 @@ export const generateRandomLocation = (baseLat: number, baseLon: number) => {
 /**
  * Default center position (Tokyo)
  */
-export const DEFAULT_POSITION: [number, number] = [35.6762, 139.6503];
+export const DEFAULT_POSITION: [number, number] = [35.6944, 139.9825];
