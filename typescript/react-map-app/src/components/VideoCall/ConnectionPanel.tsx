@@ -43,7 +43,7 @@ export function ConnectionPanel({
         >
           {showConnectionPanel ? '▲' : '▼'}
         </span>
-        接続設定
+        Connection Settings
       </h3>
       {showConnectionPanel && (
         <div className="px-4 py-3">
@@ -65,14 +65,14 @@ export function ConnectionPanel({
               onClick={joinRoom}
               className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-4 py-2 rounded shadow"
             >
-              接続開始
+              Connect
             </button>
           ) : (
             <button
               onClick={leaveRoom}
               className="bg-red-500 hover:bg-red-600 text-white font-semibold px-4 py-2 rounded shadow mt-2"
             >
-              切断
+              Disconnect
             </button>
           )}
         </div>

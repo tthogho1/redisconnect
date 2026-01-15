@@ -1,39 +1,39 @@
 # Go WebSocket Server
 
-Flask-SocketIO サーバーの Go 言語実装版です。
+Go language implementation of the Flask-SocketIO server.
 
-## 必要な環境
+## Requirements
 
-- Go 1.21 以上
+- Go 1.21 or higher
 - Redis
 
-## セットアップ
+## Setup
 
-1. 依存パッケージのインストール:
+1. Install dependencies:
 
 ```bash
 cd go
 go mod download
 ```
 
-2. 環境変数設定:
-   `.env`ファイルを親ディレクトリに作成（または既存のものを使用）
+2. Environment variable configuration:
+   Create a `.env` file in the parent directory (or use an existing one)
 
-## 実行
+## Run
 
 ```bash
 go run main.go
 ```
 
-## 主な機能
+## Main Features
 
-- WebSocket 通信（Socket.IO 互換）
-- Redis GEO 機能を使った位置情報管理
-- チャット機能（ブロードキャスト・プライベート）
-- HIGMA API 連携
-- RESTful API（ユーザー管理）
+- WebSocket communication (Socket.IO compatible)
+- Location management using Redis GEO features
+- Chat functionality (broadcast and private)
+- HIGMA API integration
+- RESTful API (user management)
 
-## エンドポイント
+## Endpoints
 
 ### WebSocket
 
@@ -41,11 +41,11 @@ go run main.go
 
 ### REST API
 
-- `GET /users` - 全ユーザー取得
-- `POST /users` - ユーザー作成
-- `DELETE /users/:user_id` - ユーザー削除
+- `GET /users` - Get all users
+- `POST /users` - Create user
+- `DELETE /users/:user_id` - Delete user
 
-## Python 版との違い
+## Differences from Python Version
 
-- Socket.IO の実装が異なるため、一部動作が異なる可能性があります
-- パフォーマンスと並行処理が Go の特性により向上しています
+- Some behavior may differ due to different Socket.IO implementation
+- Performance and concurrency improved due to Go's characteristics

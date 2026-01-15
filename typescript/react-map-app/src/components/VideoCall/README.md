@@ -1,23 +1,23 @@
 # VideoCall Component
 
-WebRTC を使用したビデオ通話コンポーネント
+Video call component using WebRTC
 
-## 概要
+## Overview
 
-このコンポーネントは、WebSocket シグナリングサーバーと WebAssembly (WASM) を使用して、ピアツーピアのビデオ通話機能を提供します。
+This component provides peer-to-peer video calling functionality using WebSocket signaling server and WebAssembly (WASM).
 
-## ファイル構成
+## File Structure
 
 ```
 src/components/VideoCall/
-├── VideoCallPopup.tsx      # メインコンポーネント
-├── VideoCallPopup.css      # スタイルシート
-└── index.ts               # エクスポート定義
+├── VideoCallPopup.tsx      # Main component
+├── VideoCallPopup.css      # Stylesheet
+└── index.ts               # Export definitions
 ```
 
-## 使用方法
+## Usage
 
-### 基本的な使い方
+### Basic Usage
 
 ```tsx
 import { VideoCallPopup } from './components/VideoCall';
@@ -27,7 +27,7 @@ function MyApp() {
 
   return (
     <div>
-      <button onClick={() => setShowPopup(true)}>ビデオ通話を開始</button>
+      <button onClick={() => setShowPopup(true)}>Start Video Call</button>
 
       {showPopup && (
         <VideoCallPopup wsUrl="ws://localhost:5000/connect" onClose={() => setShowPopup(false)} />
@@ -39,72 +39,72 @@ function MyApp() {
 
 ### Props
 
-| Prop            | 型           | 必須 | デフォルト    | 説明                                         |
-| --------------- | ------------ | ---- | ------------- | -------------------------------------------- |
-| `wsUrl`         | `string`     | ✓    | -             | WebSocket シグナリングサーバーの URL         |
-| `onClose`       | `() => void` | ✓    | -             | ポップアップを閉じる時に呼ばれるコールバック |
-| `defaultRoomId` | `string`     | -    | `'test-room'` | デフォルトのルーム ID                        |
+| Prop            | Type         | Required | Default       | Description                     |
+| --------------- | ------------ | -------- | ------------- | ------------------------------- |
+| `wsUrl`         | `string`     | ✓        | -             | WebSocket signaling server URL  |
+| `onClose`       | `() => void` | ✓        | -             | Callback when closing the popup |
+| `defaultRoomId` | `string`     | -        | `'test-room'` | Default room ID                 |
 
-## 他の React アプリへの移植
+## Porting to Other React Apps
 
-### 必要なファイル
+### Required Files
 
-1. **コンポーネントファイル**
+1. **Component Files**
 
-   - `src/components/VideoCall/` フォルダ全体をコピー
+   - Copy the entire `src/components/VideoCall/` folder
 
-2. **WASM ファイル**
+2. **WASM Files**
 
-   - `webrtc-wasm/pkg/` フォルダをコピー
-   - または、プロジェクトのビルドシステムに合わせてパスを調整
+   - Copy the `webrtc-wasm/pkg/` folder
+   - Or adjust the path according to your project's build system
 
-3. **型定義ファイル（オプション）**
-   - `src/vite-env.d.ts` （環境変数を使用する場合）
+3. **Type Definition Files (Optional)**
+   - `src/vite-env.d.ts` (if using environment variables)
 
-### インストール手順
+### Installation Steps
 
-1. **ファイルをコピー**
+1. **Copy Files**
 
    ```bash
-   # 移植先のReactプロジェクトで実行
+   # Run in the target React project
    cp -r /path/to/gosignaling-react/src/components/VideoCall ./src/components/
    cp -r /path/to/gosignaling-react/webrtc-wasm ./
    ```
 
-2. **import パスを調整**
+2. **Adjust Import Paths**
 
-   `VideoCallPopup.tsx` の WASM import パスを確認：
+   Check the WASM import path in `VideoCallPopup.tsx`:
 
    ```tsx
    import init, { WebRTCClient } from '../../../webrtc-wasm/pkg/webrtc_wasm';
    ```
 
-   プロジェクト構造に合わせてパスを変更してください。
+   Adjust the path according to your project structure.
 
-3. **CSS をインポート**
+3. **Import CSS**
 
-   必要に応じて、グローバル CSS またはコンポーネント内でインポート：
+   Import globally or within the component as needed:
 
    ```tsx
    import './components/VideoCall/VideoCallPopup.css';
    ```
 
-4. **環境変数の設定（オプション）**
+4. **Set Environment Variables (Optional)**
 
-   `.env` ファイルを作成：
+   Create a `.env` file:
 
    ```
    VITE_WS_URL=ws://your-server.com/connect
    ```
 
-### 依存関係
+### Dependencies
 
 - React 18+
-- TypeScript（推奨）
+- TypeScript (recommended)
 
-### Next.js での使用
+### Using with Next.js
 
-Next.js で使用する場合は、クライアントコンポーネントとして設定：
+When using with Next.js, configure as a client component:
 
 ```tsx
 'use client';
@@ -112,47 +112,47 @@ Next.js で使用する場合は、クライアントコンポーネントとし
 import { VideoCallPopup } from './components/VideoCall';
 ```
 
-また、WASM ファイルの読み込みを動的にする必要がある場合があります。
+You may also need to load WASM files dynamically.
 
-## 機能
+## Features
 
-- ✅ ローカルビデオストリーム表示
-- ✅ リモートビデオストリーム表示（複数ピア対応）
-- ✅ WebSocket シグナリング
-- ✅ ICE candidate 交換
-- ✅ ルーム管理
-- ✅ カメラ・マイクの停止
-- ✅ ポップアップ UI
+- ✅ Local video stream display
+- ✅ Remote video stream display (multi-peer support)
+- ✅ WebSocket signaling
+- ✅ ICE candidate exchange
+- ✅ Room management
+- ✅ Camera/microphone stop
+- ✅ Popup UI
 
-## カスタマイズ
+## Customization
 
-### スタイルの変更
+### Changing Styles
 
-`VideoCallPopup.css` を編集して、デザインをカスタマイズできます。
+Edit `VideoCallPopup.css` to customize the design.
 
-### デバッグ情報の削除
+### Removing Debug Information
 
-本番環境では、コンポーネント内のデバッグ情報（console.log、デバッグ表示）を削除することをお勧めします。
+For production environments, we recommend removing debug information (console.log, debug displays) from the component.
 
-## トラブルシューティング
+## Troubleshooting
 
-### カメラが起動しない
+### Camera Not Starting
 
-- ブラウザのカメラ権限を確認
-- HTTPS または localhost で実行していることを確認
+- Check browser camera permissions
+- Ensure running on HTTPS or localhost
 
-### WebSocket 接続エラー
+### WebSocket Connection Error
 
-- シグナリングサーバーが起動していることを確認
-- `wsUrl` が正しいことを確認
-- CORS 設定を確認
+- Verify the signaling server is running
+- Check that `wsUrl` is correct
+- Check CORS settings
 
-### ビデオが表示されない
+### Video Not Displaying
 
-- ブラウザのコンソールでエラーを確認
-- `localStream` と `isConnected` の状態を確認
-- ICE candidate の交換が正常に行われているか確認
+- Check browser console for errors
+- Verify `localStream` and `isConnected` states
+- Confirm ICE candidate exchange is working correctly
 
-## ライセンス
+## License
 
-このコンポーネントは、元のプロジェクトのライセンスに従います。
+This component follows the license of the original project.

@@ -1,88 +1,88 @@
-# Docker デプロイメントガイド
+# Docker Deployment Guide
 
-このプロジェクトを Docker で実行するためのガイドです。
+A guide for running this project with Docker.
 
-## 📋 前提条件
+## 📋 Prerequisites
 
-- Docker Desktop がインストールされていること
-- Docker Compose がインストールされていること
+- Docker Desktop installed
+- Docker Compose installed
 
-## 🚀 起動方法
+## 🚀 Starting Services
 
-### 1. 全サービスをビルド・起動
+### 1. Build and start all services
 
 ```powershell
 docker-compose up --build
 ```
 
-### 2. バックグラウンドで起動
+### 2. Start in background
 
 ```powershell
 docker-compose up -d --build
 ```
 
-### 3. 特定のサービスのみ起動
+### 3. Start specific services only
 
 ```powershell
-# Go サーバーのみ
+# Go server only
 docker-compose up go-server
 
-# gosignaling のみ
+# gosignaling only
 docker-compose up gosignaling
 ```
 
-## 🛑 停止方法
+## 🛑 Stopping Services
 
-### すべてのサービスを停止
+### Stop all services
 
 ```powershell
 docker-compose down
 ```
 
-### データボリュームも削除して停止
+### Stop and remove data volumes
 
 ```powershell
 docker-compose down -v
 ```
 
-## 🔍 ログ確認
+## 🔍 Viewing Logs
 
-### すべてのサービスのログ
+### All services logs
 
 ```powershell
 docker-compose logs -f
 ```
 
-### 特定のサービスのログ
+### Specific service logs
 
 ```powershell
 docker-compose logs -f go-server
 docker-compose logs -f gosignaling
 ```
 
-## 📦 サービス構成
+## 📦 Service Configuration
 
-### 1. **go-server** (ポート: 5000)
+### 1. **go-server** (Port: 5000)
 
-- WebSocket サーバー + React フロントエンド
-- 外部 Redis Cloud に接続
-- エンドポイント:
-  - `http://localhost:5000` - React アプリ
-  - `http://localhost:5000/map` - マップ表示
-  - `ws://localhost:5000/socket.io/` - WebSocket 接続
+- WebSocket server + React frontend
+- Connects to external Redis Cloud
+- Endpoints:
+  - `http://localhost:5000` - React app
+  - `http://localhost:5000/map` - Map display
+  - `ws://localhost:5000/socket.io/` - WebSocket connection
 
-### 2. **gosignaling** (ポート: 8080)
+### 2. **gosignaling** (Port: 8080)
 
-- WebRTC シグナリングサーバー
-- エンドポイント:
-  - `ws://localhost:8080/ws` - WebSocket 接続
+- WebRTC signaling server
+- Endpoints:
+  - `ws://localhost:8080/ws` - WebSocket connection
 
-## ⚙️ 環境変数の設定
+## ⚙️ Environment Variable Configuration
 
-プロジェクトルートに `.env` ファイルを作成して、必要な環境変数を設定してください：
+Create a `.env` file in the project root and set the required environment variables:
 
 ```env
-# Redis Cloud 接続情報
+# Redis Cloud connection info
 REDIS_HOST=redis-xxxxx.c123.us-east-1-4.ec2.cloud.redislabs.com
 REDIS_PORT=12345
 REDIS_PASSWORD=your-redis-password
@@ -92,99 +92,98 @@ REDIS_USERNAME=default
 HIGMA_API_URL=https://your-higma-api.example.com/api
 ```
 
-**重要**: Redis Cloud の接続情報は必須です。`.env` ファイルがない場合は起動に失敗します。
+**Important**: Redis Cloud connection information is required. Startup will fail if the `.env` file is missing.
 
-## 🔧 開発時の使い方
+## 🔧 Development Usage
 
-### コードを変更した後の再ビルド
+### Rebuild after code changes
 
 ```powershell
 docker-compose up --build go-server
 ```
 
-### 特定のサービスを再起動
+### Restart specific service
 
 ```powershell
 docker-compose restart go-server
 ```
 
-### コンテナに入る
+### Enter container
 
-````powershell
 ```powershell
 docker exec -it redisconnect-go-server sh
 docker exec -it redisconnect-gosignaling sh
-````
+```
 
-## 📂 ディレクトリ構造
+## 📂 Directory Structure
 
 ```
 redisconnect/
-├── docker-compose.yml          # メインの Compose ファイル
-├── .dockerignore              # Docker ビルド時の除外ファイル
+├── docker-compose.yml          # Main Compose file
+├── .dockerignore              # Files to exclude during Docker build
 ├── go/
-│   ├── Dockerfile             # Go サーバーの Dockerfile
+│   ├── Dockerfile             # Go server Dockerfile
 │   ├── .dockerignore
 │   └── main.go
 ├── gosignaling/
-│   ├── Dockerfile             # gosignaling の Dockerfile
+│   ├── Dockerfile             # gosignaling Dockerfile
 │   ├── .dockerignore
 │   └── main.go
 └── typescript/
-    └── react-map-app/         # React フロントエンド (Docker ビルド時に使用)
+    └── react-map-app/         # React frontend (used during Docker build)
 ```
 
-## 🐛 トラブルシューティング
+## 🐛 Troubleshooting
 
-### ポートが使用中の場合
+### Port already in use
 
-他のサービスがポートを使用している場合、`docker-compose.yml` のポートマッピングを変更してください：
+If another service is using the port, modify the port mapping in `docker-compose.yml`:
 
 ```yaml
 ports:
-  - '15000:5000' # 外部ポート:コンテナポート
+  - '15000:5000' # external port:container port
 ```
 
-### Redis 接続エラー
+### Redis connection error
 
-Redis Cloud への接続に問題がある場合、環境変数を確認してください：
+If there are issues connecting to Redis Cloud, check the environment variables:
 
 ```powershell
-# .env ファイルの内容を確認
+# Check .env file contents
 cat .env
 
-# Go サーバーのログを確認
+# Check Go server logs
 docker-compose logs go-server
 ```
 
-接続情報が正しいことを確認：
+Verify the connection information is correct:
 
-- `REDIS_HOST`: Redis Cloud のホスト名
-- `REDIS_PORT`: Redis Cloud のポート番号
-- `REDIS_PASSWORD`: Redis Cloud のパスワード
+- `REDIS_HOST`: Redis Cloud hostname
+- `REDIS_PORT`: Redis Cloud port number
+- `REDIS_PASSWORD`: Redis Cloud password
 
-### ビルドエラー
+### Build error
 
-キャッシュをクリアして再ビルド：
+Clear cache and rebuild:
 
 ```powershell
 docker-compose build --no-cache
 docker-compose up
 ```
 
-## 🔄 更新手順
+## 🔄 Update Procedure
 
-1. コードを変更
-2. Git でコミット
-3. Docker イメージを再ビルド
+1. Make code changes
+2. Commit with Git
+3. Rebuild Docker image
 
 ```powershell
 docker-compose down
 docker-compose up --build
 ```
 
-## 📝 注意事項
+## 📝 Notes
 
-- **Redis Cloud**: このプロジェクトは外部の Redis Cloud サービスを使用します。`.env` ファイルに接続情報を設定してください
-- **React ビルド**: `go/Dockerfile` 内で React アプリが自動的にビルドされ、`static` フォルダにコピーされます
-- **環境変数**: 本番環境では `.env` ファイルを使用し、機密情報を安全に管理してください
+- **Redis Cloud**: This project uses an external Redis Cloud service. Set the connection information in the `.env` file
+- **React Build**: The React app is automatically built inside `go/Dockerfile` and copied to the `static` folder
+- **Environment Variables**: In production, use the `.env` file to securely manage sensitive information

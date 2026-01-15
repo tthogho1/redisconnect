@@ -133,9 +133,7 @@ export function useLocationTracking({
         },
         error => {
           console.error('Geolocation error:', error);
-          alert(
-            `位置情報の取得に失敗しました: ${error.message}\nデフォルト位置（東京）を使用します。`
-          );
+          alert(`Failed to get location: ${error.message}\nUsing default location (Tokyo).`);
           // Fallback to default location
           const initialLocation = generateRandomLocation(DEFAULT_POSITION[0], DEFAULT_POSITION[1]);
           setCurrentLocation(initialLocation);
@@ -153,7 +151,7 @@ export function useLocationTracking({
         }
       );
     } else {
-      alert('このブラウザは位置情報取得に対応していません。デフォルト位置を使用します。');
+      alert('This browser does not support geolocation. Using default location.');
       const initialLocation = generateRandomLocation(DEFAULT_POSITION[0], DEFAULT_POSITION[1]);
       setCurrentLocation(initialLocation);
 

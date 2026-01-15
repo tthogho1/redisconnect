@@ -86,7 +86,7 @@ func main() {
 	// Setup Gin router
 	router := gin.Default()
 
-	// staticフォルダ公開
+	// Serve static folder
 	router.Static("/static", "./static/static")
 	router.Static("/map", "./static")
 

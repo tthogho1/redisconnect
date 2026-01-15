@@ -11,7 +11,7 @@ export function VideoCallPopup({
   onClose,
 }: VideoCallPopupProps) {
   const [roomId, setRoomId] = useState(defaultRoomId);
-  const [status, setStatus] = useState('未接続');
+  const [status, setStatus] = useState('Disconnected');
   const [isConnected, setIsConnected] = useState(false);
   const [showConnectionPanel, setShowConnectionPanel] = useState(true);
 
@@ -48,7 +48,7 @@ export function VideoCallPopup({
             const payload =
               typeof message.payload === 'string' ? JSON.parse(message.payload) : message.payload;
             clientIdRef.current = payload.client_id;
-            updateStatus(`クライアントID: ${payload.client_id}`);
+            updateStatus(`Client ID: ${payload.client_id}`);
 
             // Join room
             sendMessage({
@@ -132,35 +132,35 @@ export function VideoCallPopup({
 
   const joinRoom = useCallback(async () => {
     try {
-      updateStatus('初期化中...');
+      updateStatus('Initializing...');
 
       // Initialize WebRTC
-      updateStatus('カメラにアクセス中...');
+      updateStatus('Accessing camera...');
       await initializeWebRTC(updateStatus, (candidateMessage: string) => {
         sendMessage(JSON.parse(candidateMessage));
       });
 
       // Connect WebSocket
-      updateStatus('WebSocketに接続中...');
+      updateStatus('Connecting to WebSocket...');
       connect(
         wsUrl,
         () => {
           console.log('[WebSocket] Connected, setting isConnected to true');
-          updateStatus('WebSocket接続成功');
+          updateStatus('WebSocket connection successful');
           setIsConnected(true);
         },
         handleWebSocketMessage,
         error => {
-          updateStatus('WebSocketエラー: ' + error);
+          updateStatus('WebSocket error: ' + error);
           console.error('WebSocket error:', error);
         },
         () => {
-          updateStatus('WebSocket接続が切断されました');
+          updateStatus('WebSocket connection closed');
           setIsConnected(false);
         }
       );
     } catch (error) {
-      updateStatus('エラー: ' + (error as Error).message);
+      updateStatus('Error: ' + (error as Error).message);
       console.error(error);
     }
   }, [handleWebSocketMessage, updateStatus, wsUrl, initializeWebRTC, sendMessage, connect]);
@@ -183,7 +183,7 @@ export function VideoCallPopup({
     disconnect();
 
     setIsConnected(false);
-    updateStatus('退出しました');
+    updateStatus('Left the room');
   }, [updateStatus, cleanupWebRTC, disconnect]);
 
   // Cleanup on unmount
@@ -234,7 +234,7 @@ export function VideoCallPopup({
     >
       <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-screen overflow-y-auto">
         <div className="flex items-center justify-between border-b px-6 py-4">
-          <h2 className="text-xl font-bold">ビデオ通話</h2>
+          <h2 className="text-xl font-bold">Video Call</h2>
           <button
             className="text-2xl font-bold text-gray-400 hover:text-gray-700 transition-colors"
             onClick={handleClose}
@@ -257,7 +257,7 @@ export function VideoCallPopup({
 
           {isConnected && (
             <div className="mt-[30px] pt-5 border-t-2 border-gray-300">
-              <h3 className="mb-[15px] text-lg font-semibold">ビデオ画面</h3>
+              <h3 className="mb-[15px] text-lg font-semibold">Video Screen</h3>
               <div className="flex flex-col md:flex-row md:flex-wrap gap-5 md:max-w-4xl mx-auto">
                 {Array.from(remoteStreams.entries()).map(([clientId, stream]) => (
                   <div
@@ -269,7 +269,7 @@ export function VideoCallPopup({
                 ))}
                 <div className="bg-black rounded-lg overflow-hidden shadow-md flex flex-col items-center md:basis-1/3 w-full">
                   <h3 className="bg-black/70 text-white p-2.5 m-0 text-base w-full text-center">
-                    自分
+                    Me
                   </h3>
                   <video
                     ref={localVideoRef}
@@ -285,10 +285,10 @@ export function VideoCallPopup({
 
           {/* Debug info */}
           <div className="mt-5 text-xs text-gray-400">
-            <p>接続状態: {isConnected ? '接続中' : '未接続'}</p>
-            <p>リモートストリーム数: {remoteStreams.size}</p>
-            <p>ローカルストリーム: {localStream ? 'あり' : 'なし'}</p>
-            <p>ビデオ要素: {localVideoRef.current ? 'あり' : 'なし'}</p>
+            <p>Connection status: {isConnected ? 'Connected' : 'Disconnected'}</p>
+            <p>Remote streams: {remoteStreams.size}</p>
+            <p>Local stream: {localStream ? 'Available' : 'None'}</p>
+            <p>Video element: {localVideoRef.current ? 'Available' : 'None'}</p>
           </div>
         </div>
       </div>
