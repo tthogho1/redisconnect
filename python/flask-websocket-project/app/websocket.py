@@ -36,7 +36,7 @@ GEO_KEY = "user_locations"
 user_sid_map = {}  # { user_id: sid }
 
 
-# --- 初期化時にHIGMAユーザをRedisへ登録 ---
+# --- Register HIGMA user to Redis on initialization ---
 def register_initial_user():
     user_id = "HIGMA"
     latitude = 34.7642462
@@ -49,7 +49,7 @@ def register_initial_user():
     }
     # GEOADD
     r.geoadd(GEO_KEY, (longitude, latitude, user_id))
-    # user_info保存
+    # Save user_info
     r.set(f"user_info:{user_id}", json.dumps(user_info))
     position = r.geopos(GEO_KEY, user_id)
     print(f"Registered initial user {user_id} at position {position}")
@@ -159,7 +159,7 @@ def send_message_to_higma(from_user: str, message: str, timestamp: str = None):
     """
 
     try:
-        # 外部APIへPOST
+        # POST to external API
         api_url = HIGMA_API_URL
         payload = {"query": message}
         response = requests.post(api_url, json=payload, timeout=10)
@@ -167,7 +167,7 @@ def send_message_to_higma(from_user: str, message: str, timestamp: str = None):
         if response.status_code == 200:
             api_response = response.json()
             message = api_response.get("answer", "No response from HIGMA")
-            # APIからの応答をHIGMAからのメッセージとして送信者に返す
+            # Return API response as a message from HIGMA to sender
             higma_reply = {
                 "type": "private",
                 "from": "HIGMA",
@@ -209,7 +209,7 @@ def handle_chat_private(data):
         emit("chat_error", {"error": "from, to, and message are required"})
         return
 
-    # HIGMAへのメッセージの場合、外部APIにPOSTして応答を返す
+    # If message is to HIGMA, POST to external API and return response
     if to_user == "HIGMA":
         send_message_to_higma(from_user, message, data.get("timestamp"))
         return
@@ -493,6 +493,6 @@ if __name__ == "__main__":
     print("WebSocket endpoint: ws://localhost:{}/ (event: 'location')".format(app_port))
     print("HTTP POST /users, DELETE /users/<id> available.")
     print("Redis host:", HOST, "port:", PORT)
-    # アプリ起動時に一度だけ登録
+    # Register once at app startup
     register_initial_user()
     socketio.run(app, host="0.0.0.0", port=app_port, debug=True)

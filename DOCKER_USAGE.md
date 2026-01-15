@@ -1,25 +1,25 @@
-# Docker Compose 使用方法
+# Docker Compose Usage Guide
 
-## ローカル開発環境
+## Local Development Environment
 
-ローカル開発では `docker-compose.local.yml` を使用してください：
+For local development, use `docker-compose.local.yml`:
 
 ```powershell
-# ローカル設定でビルド・起動
+# Build and start with local settings
 docker-compose -f docker-compose.local.yml up --build
 
-# バックグラウンド起動
+# Start in background
 docker-compose -f docker-compose.local.yml up -d --build
 
-# 停止
+# Stop
 docker-compose -f docker-compose.local.yml down
 ```
 
-## 本番環境
+## Production Environment
 
-本番環境では `.env` ファイルに環境変数を設定して使用します：
+For production, set environment variables in the `.env` file:
 
-### 1. .env ファイルを作成
+### 1. Create .env file
 
 ```env
 REDIS_HOST=your-redis-host.redis-cloud.com
@@ -29,25 +29,25 @@ REDIS_USERNAME=default
 HIGMA_API_URL=https://your-api.example.com/api/chat
 ```
 
-### 2. docker-compose で起動
+### 2. Start with docker-compose
 
 ```powershell
-# .env ファイルを読み込んで起動
+# Start with .env file loaded
 docker-compose up --build
 
-# バックグラウンド起動
+# Start in background
 docker-compose up -d --build
 
-# 停止
+# Stop
 docker-compose down
 ```
 
-## ファイル構成
+## File Structure
 
-- `docker-compose.yml` - 本番用（環境変数を使用、Git で管理）
-- `docker-compose.local.yml` - ローカル開発用（機密情報を含む、Git で管理しない）
-- `.env` - 本番環境変数（Git で管理しない）
+- `docker-compose.yml` - For production (uses environment variables, tracked in Git)
+- `docker-compose.local.yml` - For local development (contains sensitive information, not tracked in Git)
+- `.env` - Production environment variables (not tracked in Git)
 
-## 注意事項
+## Important Notes
 
-⚠️ **重要**: `docker-compose.local.yml` と `.env` ファイルには機密情報が含まれるため、Git リポジトリにコミットしないでください。これらのファイルは `.gitignore` に追加されています。
+⚠️ **Important**: `docker-compose.local.yml` and `.env` files contain sensitive information, so do not commit them to the Git repository. These files are added to `.gitignore`.

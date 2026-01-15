@@ -1,33 +1,33 @@
 # Redis Connection Project
 
-WebSocket + Redis + OpenStreetMap を使用したリアルタイム位置情報共有アプリケーション
+Real-time location sharing application using WebSocket + Redis + OpenStreetMap
 
-## プロジェクト構成
+## Project Structure
 
 ### Python (Flask + WebSocket + Redis)
 
-- `python/flask-websocket-project/` - WebSocket サーバー
-  - Flask-SocketIO でリアルタイム通信
-  - Redis Geospatial Index で位置情報管理
-  - Swagger/OpenAPI ドキュメント生成
+- `python/flask-websocket-project/` - WebSocket Server
+  - Real-time communication with Flask-SocketIO
+  - Location management with Redis Geospatial Index
+  - Swagger/OpenAPI documentation generation
 
 ### TypeScript (React + OpenStreetMap)
 
-- `typescript/react-map-app/` - フロントエンド
+- `typescript/react-map-app/` - Frontend
   - React + TypeScript
   - OpenStreetMap (Leaflet)
   - Socket.IO Client
-  - リアルタイム位置情報表示
+  - Real-time location display
 
-## セットアップ
+## Setup
 
-### 必要な環境
+### Requirements
 
 - Python 3.8+
 - Node.js 16+
 - Redis 7.0+
 
-### Python サーバー
+### Python Server
 
 ```bash
 cd python/flask-websocket-project
@@ -37,7 +37,7 @@ source .venv/bin/activate  # Mac/Linux
 pip install -r requirements.txt
 ```
 
-`.env` ファイルを作成:
+Create `.env` file:
 
 ```env
 HOST=your-redis-host
@@ -47,13 +47,13 @@ PASSWORD=your-password
 APP_PORT=5000
 ```
 
-サーバー起動:
+Start server:
 
 ```bash
 python app/websocket.py
 ```
 
-### React アプリケーション
+### React Application
 
 ```bash
 cd typescript/react-map-app
@@ -61,38 +61,38 @@ npm install
 npm start
 ```
 
-## 機能
+## Features
 
 ### WebSocket Server
 
-- ユーザー位置情報の受信と保存 (Redis GEO)
-- リアルタイムブロードキャスト
-- REST API エンドポイント (GET/POST/DELETE)
+- Receive and save user location (Redis GEO)
+- Real-time broadcast
+- REST API endpoints (GET/POST/DELETE)
 - Swagger UI: `http://localhost:5000/apidocs`
 
 ### React Client
 
-- ブラウザの位置情報取得
-- リアルタイム地図表示
-- ユーザーごとのカラーアイコン
-- 自動位置更新機能
+- Browser geolocation
+- Real-time map display
+- Color icons for each user
+- Auto location update
 
 ## API
 
 ### WebSocket Events
 
-- `location` - 位置情報送信
-- `all_users` - 全ユーザー情報受信
-- `user_added` - 新規ユーザー追加通知
-- `user_updated` - ユーザー更新通知
-- `user_deleted` - ユーザー削除通知
+- `location` - Send location
+- `all_users` - Receive all users info
+- `user_added` - New user notification
+- `user_updated` - User update notification
+- `user_deleted` - User deletion notification
 
 ### REST API
 
-- `GET /users` - 全ユーザー取得
-- `POST /users` - ユーザー作成
-- `DELETE /users/<id>` - ユーザー削除
+- `GET /users` - Get all users
+- `POST /users` - Create user
+- `DELETE /users/<id>` - Delete user
 
-## ライセンス
+## License
 
 MIT

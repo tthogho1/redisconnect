@@ -4,7 +4,6 @@ import (
 	"encoding/json"
 	"log"
 	"sync"
-	"time"
 
 	socketio "github.com/doquangtan/socketio/v4"
 	"github.com/tthogho1/redisconnect/go/config"
@@ -34,14 +33,6 @@ func HandleRegister(socket *socketio.Socket, event *socketio.EventPayload, userS
 	userSIDLock.Lock()
 	userSIDMap[userID] = socket
 	userSIDLock.Unlock()
-
-	registrationData := map[string]interface{}{
-		"user_id":    userID,
-		"socket_id":  socket.Id,
-		"registered": time.Now().Unix(),
-	}
-	registrationJSON, _ := json.Marshal(registrationData)
-	config.Rdb.Set(config.Ctx, "user:registration:"+userID, string(registrationJSON), 5*time.Minute)
 
 	log.Printf("✅ User registered: %s (socket: %s)", userID, socket.Id)
 
@@ -180,12 +171,24 @@ func HandleChatPrivate(socket *socketio.Socket, event *socketio.EventPayload, us
 }
 
 // HandleDisconnect handles client disconnection
-func HandleDisconnect(socketID string, userSIDMap map[string]*socketio.Socket, userSIDLock *sync.RWMutex) {
+func HandleDisconnect(socketID string, io *socketio.Io, userSIDMap map[string]*socketio.Socket, userSIDLock *sync.RWMutex) {
 	userSIDLock.Lock()
 	for userID, socket := range userSIDMap {
 		if socket.Id == socketID {
 			delete(userSIDMap, userID)
 			log.Printf("Removed user %s from map", userID)
+
+			// Delete user data from Redis
+			if err := services.DeleteUserFromRedis(userID); err != nil {
+				log.Printf("⚠️ Error deleting user %s from Redis: %v", userID, err)
+			} else {
+				log.Printf("✅ Deleted user %s from Redis (user_info and user_locations)", userID)
+			}
+
+			// Notify all clients that the user has been deleted
+			io.Emit("user_deleted", map[string]string{"id": userID})
+			log.Printf("📤 Emitted user_deleted event for user %s", userID)
+
 			break
 		}
 	}

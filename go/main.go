@@ -68,7 +68,7 @@ func main() {
 		// Disconnect event
 		socket.On("disconnect", func(event *socketio.EventPayload) {
 			log.Printf("Client disconnected: %s", socket.Id)
-			handlers.HandleDisconnect(socket.Id, userSIDMap, &userSIDLock)
+			handlers.HandleDisconnect(socket.Id, io, userSIDMap, &userSIDLock)
 		})
 	})
 
@@ -86,7 +86,7 @@ func main() {
 	// Setup Gin router
 	router := gin.Default()
 
-	// staticフォルダ公開
+	// Serve static folder
 	router.Static("/static", "./static/static")
 	router.Static("/map", "./static")
 

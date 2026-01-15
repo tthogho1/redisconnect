@@ -14,7 +14,7 @@ export const USER_COLORS = [
   '#FF3333', // Red
 ];
 
-// HIGMAアイコン用のURLを.envから取得
+// Get HIGMA icon URL from .env
 const HIGMA_ICON_URL = process.env.REACT_APP_HIGMA_ICON_PATH || '/channels4_profile.jpg';
 
 /**
