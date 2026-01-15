@@ -1,17 +1,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import init, { WebRTCClient } from 'webrtc-wasm';
-import './VideoCallPopup.css';
-
-interface SignalingMessage {
-  type: string;
-  payload: any;
-}
-
-export interface VideoCallPopupProps {
-  wsUrl: string;
-  defaultRoomId?: string;
-  onClose: () => void;
-}
+import { RemoteVideo } from './RemoteVideo';
+import { ConnectionPanel } from './ConnectionPanel';
+import { useWebRTC } from './useWebRTC';
+import { useWebSocket } from './useWebSocket';
+import { SignalingMessage, VideoCallPopupProps } from './types';
 
 export function VideoCallPopup({
   wsUrl,
@@ -21,35 +13,34 @@ export function VideoCallPopup({
   const [roomId, setRoomId] = useState(defaultRoomId);
   const [status, setStatus] = useState('未接続');
   const [isConnected, setIsConnected] = useState(false);
-  const [remoteStreams, setRemoteStreams] = useState<Map<string, MediaStream>>(new Map());
-  const [localStream, setLocalStream] = useState<MediaStream | null>(null);
+  const [showConnectionPanel, setShowConnectionPanel] = useState(true);
 
-  const wsRef = useRef<WebSocket | null>(null);
-  const wasmClientRef = useRef<WebRTCClient | null>(null);
   const localVideoRef = useRef<HTMLVideoElement>(null);
-  const clientIdRef = useRef<string | null>(null);
+
+  const {
+    localStream,
+    remoteStreams,
+    clientIdRef,
+    initializeWebRTC,
+    handleNewClient,
+    handleOffer,
+    handleAnswer,
+    handleIceCandidate,
+    handleLeaveClient,
+    cleanup: cleanupWebRTC,
+  } = useWebRTC();
+
+  const { sendMessage, connect, disconnect } = useWebSocket();
 
   const updateStatus = useCallback((message: string) => {
     setStatus(message);
     console.log(message);
   }, []);
 
-  const sendMessage = useCallback((message: SignalingMessage) => {
-    if (wsRef.current && wsRef.current.readyState === WebSocket.OPEN) {
-      console.log('[sendMessage] Sending:', message.type, message);
-      wsRef.current.send(JSON.stringify(message));
-    } else {
-      console.error('[sendMessage] WebSocket not ready');
-    }
-  }, []);
-
   const handleWebSocketMessage = useCallback(
     async (event: MessageEvent) => {
       const message: SignalingMessage = JSON.parse(event.data);
       console.log('Received:', message);
-
-      const wasmClient = wasmClientRef.current;
-      if (!wasmClient) return;
 
       try {
         switch (message.type) {
@@ -70,11 +61,10 @@ export function VideoCallPopup({
           case 'new-client': {
             const payload =
               typeof message.payload === 'string' ? JSON.parse(message.payload) : message.payload;
-            console.log('[WASM] Handling new client:', payload.client_id);
-            const offerMessage = await wasmClient.handleNewClient(payload.client_id);
-            if (offerMessage && wsRef.current) {
+            const offerMessage = await handleNewClient(payload.client_id);
+            if (offerMessage) {
               console.log('[WASM] Sending offer via WebSocket');
-              wsRef.current.send(offerMessage);
+              sendMessage(JSON.parse(offerMessage));
             }
             break;
           }
@@ -82,11 +72,10 @@ export function VideoCallPopup({
           case 'offer': {
             const payload =
               typeof message.payload === 'string' ? JSON.parse(message.payload) : message.payload;
-            console.log('[WASM] Handling offer from:', payload.client_id);
-            const answerMessage = await wasmClient.handleOffer(payload.client_id, payload.sdp);
-            if (answerMessage && wsRef.current) {
+            const answerMessage = await handleOffer(payload.client_id, payload.sdp);
+            if (answerMessage) {
               console.log('[WASM] Sending answer via WebSocket');
-              wsRef.current.send(answerMessage);
+              sendMessage(JSON.parse(answerMessage));
             }
             break;
           }
@@ -94,16 +83,14 @@ export function VideoCallPopup({
           case 'answer': {
             const payload =
               typeof message.payload === 'string' ? JSON.parse(message.payload) : message.payload;
-            console.log('[WASM] Handling answer from:', payload.client_id);
-            await wasmClient.handleAnswer(payload.client_id, payload.sdp);
+            await handleAnswer(payload.client_id, payload.sdp);
             break;
           }
 
           case 'ice-candidate': {
             const payload =
               typeof message.payload === 'string' ? JSON.parse(message.payload) : message.payload;
-            console.log('[WASM] Handling ICE candidate from:', payload.client_id);
-            await wasmClient.handleIceCandidate(
+            await handleIceCandidate(
               payload.client_id,
               payload.candidate,
               payload.sdpMid || null,
@@ -115,12 +102,7 @@ export function VideoCallPopup({
           case 'leave-client': {
             const payload =
               typeof message.payload === 'string' ? JSON.parse(message.payload) : message.payload;
-            wasmClient.handleLeaveClient(payload.client_id);
-            setRemoteStreams(prev => {
-              const next = new Map(prev);
-              next.delete(payload.client_id);
-              return next;
-            });
+            handleLeaveClient(payload.client_id);
             break;
           }
 
@@ -135,73 +117,53 @@ export function VideoCallPopup({
         console.error('[WASM] Error handling message:', error);
       }
     },
-    [roomId, sendMessage, updateStatus]
+    [
+      roomId,
+      sendMessage,
+      updateStatus,
+      clientIdRef,
+      handleNewClient,
+      handleOffer,
+      handleAnswer,
+      handleIceCandidate,
+      handleLeaveClient,
+    ]
   );
 
   const joinRoom = useCallback(async () => {
     try {
       updateStatus('初期化中...');
 
-      // Initialize WASM
-      console.log('[WASM] Initializing...');
-      await init();
-
-      const wasmClient = new WebRTCClient();
-      console.log('[WASM] Client created');
-      wasmClientRef.current = wasmClient;
-
-      // Setup callbacks
-      wasmClient.setOnStatusChange((message: string) => {
-        updateStatus(message);
-      });
-
-      wasmClient.setOnRemoteStream((clientId: string, stream: MediaStream) => {
-        console.log('[WASM] Remote stream received for:', clientId);
-        setRemoteStreams(prev => new Map(prev).set(clientId, stream));
-      });
-
-      wasmClient.setOnIceCandidate((candidateMessage: string) => {
-        console.log('[WASM] Sending ICE candidate via WebSocket');
-        if (wsRef.current) {
-          wsRef.current.send(candidateMessage);
-        }
-      });
-
-      // Get local stream
-      console.log('[WASM] Getting local stream...');
+      // Initialize WebRTC
       updateStatus('カメラにアクセス中...');
-      const stream = await wasmClient.getLocalStream();
-      setLocalStream(stream);
-      console.log('[WASM] Local stream obtained, tracks:', stream.getTracks().length);
-      updateStatus('WebSocketに接続中...');
+      await initializeWebRTC(updateStatus, (candidateMessage: string) => {
+        sendMessage(JSON.parse(candidateMessage));
+      });
 
       // Connect WebSocket
-      console.log('[WebSocket] Connecting to:', wsUrl);
-      const ws = new WebSocket(wsUrl);
-      wsRef.current = ws;
-
-      ws.onopen = () => {
-        console.log('[WebSocket] Connected, setting isConnected to true');
-        updateStatus('WebSocket接続成功');
-        setIsConnected(true);
-      };
-
-      ws.onmessage = handleWebSocketMessage;
-
-      ws.onerror = error => {
-        updateStatus('WebSocketエラー: ' + error);
-        console.error('WebSocket error:', error);
-      };
-
-      ws.onclose = () => {
-        updateStatus('WebSocket接続が切断されました');
-        setIsConnected(false);
-      };
+      updateStatus('WebSocketに接続中...');
+      connect(
+        wsUrl,
+        () => {
+          console.log('[WebSocket] Connected, setting isConnected to true');
+          updateStatus('WebSocket接続成功');
+          setIsConnected(true);
+        },
+        handleWebSocketMessage,
+        error => {
+          updateStatus('WebSocketエラー: ' + error);
+          console.error('WebSocket error:', error);
+        },
+        () => {
+          updateStatus('WebSocket接続が切断されました');
+          setIsConnected(false);
+        }
+      );
     } catch (error) {
       updateStatus('エラー: ' + (error as Error).message);
       console.error(error);
     }
-  }, [handleWebSocketMessage, updateStatus, wsUrl]);
+  }, [handleWebSocketMessage, updateStatus, wsUrl, initializeWebRTC, sendMessage, connect]);
 
   const leaveRoom = useCallback(() => {
     // Stop local media tracks
@@ -214,28 +176,15 @@ export function VideoCallPopup({
       localVideoRef.current.srcObject = null;
     }
 
-    // Stop remote streams - use ref to avoid dependency
-    setRemoteStreams(prev => {
-      prev.forEach(stream => {
-        stream.getTracks().forEach(track => track.stop());
-      });
-      return new Map();
-    });
+    // Cleanup WebRTC
+    cleanupWebRTC();
 
-    if (wasmClientRef.current) {
-      wasmClientRef.current.close();
-      wasmClientRef.current = null;
-    }
+    // Disconnect WebSocket
+    disconnect();
 
-    if (wsRef.current) {
-      wsRef.current.close();
-      wsRef.current = null;
-    }
-
-    setLocalStream(null);
     setIsConnected(false);
     updateStatus('退出しました');
-  }, [updateStatus]);
+  }, [updateStatus, cleanupWebRTC, disconnect]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -275,7 +224,7 @@ export function VideoCallPopup({
 
   return (
     <div
-      className="popup-overlay"
+      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black bg-opacity-50"
       onClick={e => {
         // Prevent closing when clicking overlay
         if (e.target === e.currentTarget) {
@@ -283,62 +232,59 @@ export function VideoCallPopup({
         }
       }}
     >
-      <div className="popup-content">
-        <div className="popup-header">
-          <h2>ビデオ通話</h2>
-          <button className="close-button" onClick={handleClose}>
+      <div className="bg-white rounded-lg shadow-lg w-full max-w-4xl mx-4 max-h-screen overflow-y-auto">
+        <div className="flex items-center justify-between border-b px-6 py-4">
+          <h2 className="text-xl font-bold">ビデオ通話</h2>
+          <button
+            className="text-2xl font-bold text-gray-400 hover:text-gray-700 transition-colors"
+            onClick={handleClose}
+          >
             ×
           </button>
         </div>
 
-        <div className="popup-body">
-          <div className="connection-panel">
-            <h3>接続設定</h3>
-            <div style={{ marginBottom: '20px' }}>
-              <label>
-                Room ID:{' '}
-                <input
-                  type="text"
-                  value={roomId}
-                  onChange={e => setRoomId(e.target.value)}
-                  style={{ width: '300px' }}
-                  disabled={isConnected}
-                />
-              </label>
-            </div>
-            <p className="status">{status}</p>
-            {!isConnected ? (
-              <button onClick={joinRoom} className="connect-button">
-                接続開始
-              </button>
-            ) : (
-              <button
-                onClick={leaveRoom}
-                className="disconnect-button"
-                style={{ marginTop: '10px' }}
-              >
-                切断
-              </button>
-            )}
-          </div>
+        <div className="p-6">
+          <ConnectionPanel
+            roomId={roomId}
+            setRoomId={setRoomId}
+            status={status}
+            isConnected={isConnected}
+            showConnectionPanel={showConnectionPanel}
+            setShowConnectionPanel={setShowConnectionPanel}
+            joinRoom={joinRoom}
+            leaveRoom={leaveRoom}
+          />
 
           {isConnected && (
-            <div className="video-section">
-              <h3 style={{ marginBottom: '15px' }}>ビデオ画面</h3>
-              <div className="videos">
-                <div className="video-container">
-                  <h3>自分</h3>
-                  <video ref={localVideoRef} autoPlay muted playsInline className="video" />
-                </div>
+            <div className="mt-[30px] pt-5 border-t-2 border-gray-300">
+              <h3 className="mb-[15px] text-lg font-semibold">ビデオ画面</h3>
+              <div className="flex flex-col md:flex-row md:flex-wrap gap-5 md:max-w-4xl mx-auto">
                 {Array.from(remoteStreams.entries()).map(([clientId, stream]) => (
-                  <RemoteVideo key={clientId} clientId={clientId} stream={stream} />
+                  <div
+                    key={clientId}
+                    className="bg-black rounded-lg overflow-hidden shadow-md flex flex-col items-center md:basis-1/3 w-full"
+                  >
+                    <RemoteVideo clientId={clientId} stream={stream} />
+                  </div>
                 ))}
+                <div className="bg-black rounded-lg overflow-hidden shadow-md flex flex-col items-center md:basis-1/3 w-full">
+                  <h3 className="bg-black/70 text-white p-2.5 m-0 text-base w-full text-center">
+                    自分
+                  </h3>
+                  <video
+                    ref={localVideoRef}
+                    autoPlay
+                    muted
+                    playsInline
+                    className="w-full h-auto object-cover"
+                  />
+                </div>
               </div>
             </div>
           )}
 
           {/* Debug info */}
-          <div style={{ marginTop: '20px', fontSize: '12px', color: '#999' }}>
+          <div className="mt-5 text-xs text-gray-400">
             <p>接続状態: {isConnected ? '接続中' : '未接続'}</p>
             <p>リモートストリーム数: {remoteStreams.size}</p>
             <p>ローカルストリーム: {localStream ? 'あり' : 'なし'}</p>
@@ -346,29 +292,6 @@ export function VideoCallPopup({
           </div>
         </div>
       </div>
-    </div>
-  );
-}
-
-interface RemoteVideoProps {
-  clientId: string;
-  stream: MediaStream;
-}
-
-function RemoteVideo({ clientId, stream }: RemoteVideoProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-
-  useEffect(() => {
-    if (videoRef.current && stream) {
-      console.log('[RemoteVideo] Setting stream for:', clientId);
-      videoRef.current.srcObject = stream;
-    }
-  }, [clientId, stream]);
-
-  return (
-    <div className="video-container">
-      <h3>Peer: {clientId.substring(0, 8)}</h3>
-      <video ref={videoRef} autoPlay playsInline className="video" />
     </div>
   );
 }

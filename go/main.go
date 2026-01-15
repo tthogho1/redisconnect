@@ -68,7 +68,7 @@ func main() {
 		// Disconnect event
 		socket.On("disconnect", func(event *socketio.EventPayload) {
 			log.Printf("Client disconnected: %s", socket.Id)
-			handlers.HandleDisconnect(socket.Id, userSIDMap, &userSIDLock)
+			handlers.HandleDisconnect(socket.Id, io, userSIDMap, &userSIDLock)
 		})
 	})
 
