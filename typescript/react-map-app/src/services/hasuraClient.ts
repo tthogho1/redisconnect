@@ -1,7 +1,7 @@
 import { Airport, AirportsQueryVariables } from '../types/airport';
 
-const HASURA_ENDPOINT = 'https://apt-panther-30.hasura.app/v1/graphql';
-const HASURA_ADMIN_SECRET = 'GLwNuQEwAPIY1hFgp43i5XsSOGTvcu69y2GA5sR1ES51DAOIf5evfCrWfT4KxfPs';
+const HASURA_ENDPOINT = process.env.REACT_APP_HASURA_ENDPOINT || '';
+const HASURA_ADMIN_SECRET = process.env.REACT_APP_HASURA_ADMIN_SECRET || '';
 
 export async function fetchAirportsInBounds(variables: AirportsQueryVariables): Promise<Airport[]> {
   const query = `

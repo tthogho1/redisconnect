@@ -5,3 +5,4 @@ export { MapCenterController } from './MapCenterController';
 export { UserMarkers } from './UserMarkers';
 export { AirportMarkers } from './AirportMarkers';
 export { CurrentLocationMarker } from './CurrentLocationMarker';
+export { LandmarkMarkers } from './LandmarkMarkers';

@@ -12,11 +12,13 @@ import {
   UserMarkers,
   AirportMarkers,
   CurrentLocationMarker,
+  LandmarkMarkers,
 } from './components/Map';
 import { ChatWindow } from './components/Chat';
 import { LocationControl } from './components/LocationControl';
 import { DEFAULT_POSITION } from './utils/locationUtils';
-import { useWebSocket, useLocationTracking, useChat, useAirports } from './hooks';
+import { useWebSocket, useLocationTracking, useChat, useAirports, useLandmarks } from './hooks';
+import { LandmarkSettings } from './types/landmark';
 
 const SIGNALING_URL = process.env.REACT_APP_SIGNALING_URL || 'ws://localhost:8080/ws';
 
@@ -27,6 +29,10 @@ function App() {
   const [showBounds, setShowBounds] = useState<boolean>(false);
   const [showLocationControl, setShowLocationControl] = useState<boolean>(true);
   const [targetMapCenter, setTargetMapCenter] = useState<{ lat: number; lon: number } | null>(null);
+  const [landmarkSettings, setLandmarkSettings] = useState<LandmarkSettings>({
+    radius: 10000,
+    limit: 10,
+  });
   const userNameRef = useRef<string>('');
 
   // Update userNameRef when userName changes
@@ -37,6 +43,7 @@ function App() {
   // Custom hooks for managing different concerns
   const { socket, connected, users, chatMessages, addChatMessage } = useWebSocket(userNameRef);
   const { airports, mapBounds, setMapBounds } = useAirports();
+  const { landmarks } = useLandmarks(mapBounds, landmarkSettings);
   const { currentLocation, initialMapCenter, handleStartTracking, handleStopTracking } =
     useLocationTracking({
       userName,
@@ -71,7 +78,14 @@ function App() {
 
       <main className="flex-1 p-5 max-w-[1920px] mx-auto w-full relative">
         {/* Map Bounds Display */}
-        {showBounds && <MapBoundsDisplay bounds={mapBounds} />}
+        {showBounds && (
+          <MapBoundsDisplay
+            bounds={mapBounds}
+            landmarkSettings={landmarkSettings}
+            onLandmarkSettingsChange={setLandmarkSettings}
+            onLocationSelect={(lat, lon) => setTargetMapCenter({ lat, lon })}
+          />
+        )}
 
         {/* Location Tracking Control */}
         {showLocationControl && (
@@ -101,6 +115,7 @@ function App() {
             <CurrentLocationMarker currentLocation={currentLocation} userName={userName} />
             <UserMarkers users={users.filter(u => u.id !== userName)} />
             <AirportMarkers airports={airports} />
+            <LandmarkMarkers landmarks={landmarks} />
           </MapContainer>
 
           {/* Move to Current Location Button */}

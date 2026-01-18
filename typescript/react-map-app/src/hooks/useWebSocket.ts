@@ -53,7 +53,7 @@ export function useWebSocket(userNameRef: React.RefObject<string>): UseWebSocket
 
     // Listen for user updated
     socket.on('user_updated', (user: User) => {
-      console.log('User updated:', user);
+      // Logging disabled to reduce console noise
       setUsers(prevUsers => {
         const exists = prevUsers.some(u => u.id === user.id);
         if (exists) {
