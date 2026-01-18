@@ -52,7 +52,7 @@ func InitializeRedisSubscriptions(io *socketio.Io, userSIDMap map[string]*socket
 			var locationData map[string]interface{}
 			json.Unmarshal([]byte(msg.Payload), &locationData)
 			io.Emit("user_updated", locationData)
-			log.Printf("📡 Received location update from Redis: %v", locationData)
+			// Logging disabled to reduce log noise
 
 		case UserDeletedChannel:
 			// Handle user deletions from other instances

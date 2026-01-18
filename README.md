@@ -76,6 +76,14 @@ npm start
 - Real-time map display
 - Color icons for each user
 - Auto location update
+- **Landmark display:**
+  - Nearby landmarks are fetched from Wikimedia geosearch API and shown on the map with thumbnails and Wikipedia links.
+  - Search radius and result count can be adjusted from the UI.
+- **Geocoding search:**
+  - Search for places, addresses, or countries using OpenStreetMap Nominatim API.
+  - Jump to searched location on the map.
+- **Hasura GraphQL integration:**
+  - Airport data is fetched from Hasura GraphQL endpoint using environment variables for endpoint and secret.
 
 ## API
 
