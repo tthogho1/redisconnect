@@ -6,3 +6,4 @@ export { UserMarkers } from './UserMarkers';
 export { AirportMarkers } from './AirportMarkers';
 export { CurrentLocationMarker } from './CurrentLocationMarker';
 export { LandmarkMarkers } from './LandmarkMarkers';
+export { DisableMapDrag } from './DisableMapDrag';

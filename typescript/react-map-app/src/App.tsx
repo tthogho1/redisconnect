@@ -13,6 +13,7 @@ import {
   AirportMarkers,
   CurrentLocationMarker,
   LandmarkMarkers,
+  DisableMapDrag,
 } from './components/Map';
 import { ChatWindow } from './components/Chat';
 import { LocationControl } from './components/LocationControl';
@@ -43,7 +44,7 @@ function App() {
   // Custom hooks for managing different concerns
   const { socket, connected, users, chatMessages, addChatMessage } = useWebSocket(userNameRef);
   const { airports, mapBounds, setMapBounds } = useAirports();
-  const { landmarks } = useLandmarks(mapBounds, landmarkSettings);
+  const { landmarks, isLoading: isLandmarksLoading } = useLandmarks(mapBounds, landmarkSettings);
   const { currentLocation, initialMapCenter, handleStartTracking, handleStopTracking } =
     useLocationTracking({
       userName,
@@ -106,6 +107,7 @@ function App() {
             zoom={13}
             style={{ height: '600px', width: '100%' }}
           >
+            <DisableMapDrag disabled={isLandmarksLoading} />
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"

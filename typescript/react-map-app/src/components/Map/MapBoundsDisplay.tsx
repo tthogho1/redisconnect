@@ -34,12 +34,12 @@ export function MapBoundsDisplay({
   }
 
   const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.min(Math.max(Number(e.target.value), 500), 10000);
+    const value = Math.min(Math.max(Number(e.target.value), 1000), 100000);
     onLandmarkSettingsChange({ ...landmarkSettings, radius: value });
   };
 
   const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = Math.min(Math.max(Number(e.target.value), 1), 50);
+    const value = Math.min(Math.max(Number(e.target.value), 1), 200);
     onLandmarkSettingsChange({ ...landmarkSettings, limit: value });
   };
 
@@ -166,20 +166,23 @@ export function MapBoundsDisplay({
           <div className="mt-3 grid grid-cols-1 gap-3 text-gray-600">
             <div className="bg-white px-3 py-2 rounded">
               <label className="block font-medium mb-1">
-                Search Radius: {landmarkSettings.radius}m
+                Search Radius:{' '}
+                {landmarkSettings.radius >= 1000
+                  ? `${(landmarkSettings.radius / 1000).toFixed(1)}km`
+                  : `${landmarkSettings.radius}m`}
               </label>
               <input
                 type="range"
-                min="500"
-                max="10000"
-                step="500"
+                min="1000"
+                max="100000"
+                step="1000"
                 value={landmarkSettings.radius}
                 onChange={handleRadiusChange}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-gray-400">
-                <span>500m</span>
-                <span>10km</span>
+                <span>1km</span>
+                <span>100km</span>
               </div>
             </div>
             <div className="bg-white px-3 py-2 rounded">
@@ -189,15 +192,15 @@ export function MapBoundsDisplay({
               <input
                 type="range"
                 min="1"
-                max="50"
-                step="1"
+                max="200"
+                step="5"
                 value={landmarkSettings.limit}
                 onChange={handleLimitChange}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-gray-400">
                 <span>1</span>
-                <span>50</span>
+                <span>200</span>
               </div>
             </div>
           </div>
