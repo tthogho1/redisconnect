@@ -11,11 +11,12 @@ interface UseLandmarksReturn {
 
 /**
  * Custom hook for fetching and managing landmarks based on map bounds
+ * Uses CirrusSearch API which supports larger search areas than the 10km limit of geosearch
  * Triggered at the same time as airport fetching (on map move)
  */
 export function useLandmarks(
   mapBounds: MapBounds | null,
-  settings: LandmarkSettings = { radius: 10000, limit: 10 }
+  settings: LandmarkSettings = { radius: 50000, limit: 10 } // CirrusSearch supports larger radius
 ): UseLandmarksReturn {
   const [landmarks, setLandmarks] = useState<Landmark[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -29,7 +30,7 @@ export function useLandmarks(
         setError(null);
 
         try {
-          // Use map center for geosearch
+          // Use map center for CirrusSearch with nearcoord
           const { lat, lng } = mapBounds.center;
 
           const landmarksData = await fetchLandmarksNearby({
