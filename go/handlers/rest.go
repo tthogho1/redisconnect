@@ -52,3 +52,45 @@ func DeleteUser(c *gin.Context, io *socketio.Io) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "User deleted"})
 }
+
+// UpdateUser updates an existing user's info (name and/or location)
+func UpdateUser(c *gin.Context, io *socketio.Io) {
+	userID := c.Param("user_id")
+
+	var user models.User
+	if err := c.ShouldBindJSON(&user); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Ensure path user_id and payload ID are consistent when provided
+	if user.ID != "" && user.ID != userID {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "user ID in path and body do not match"})
+		return
+	}
+
+	// Use name from payload if provided
+	name := user.Name
+	if name == "" {
+		name = userID
+	}
+
+	if err := services.SaveUserToRedis(userID, name, user.Latitude, user.Longitude); err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	// Publish update to other instances and notify connected clients
+	locationData := map[string]interface{}{
+		"id":        userID,
+		"name":      name,
+		"latitude":  user.Latitude,
+		"longitude": user.Longitude,
+	}
+	locationJSON, _ := json.Marshal(locationData)
+	config.Rdb.Publish(config.Ctx, services.UserLocationChannel, string(locationJSON))
+
+	io.Emit("user_updated", locationData)
+
+	c.JSON(http.StatusOK, locationData)
+}

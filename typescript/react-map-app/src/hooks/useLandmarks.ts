@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { MapBounds } from '../types/map';
 import { Landmark, LandmarkSettings } from '../types/landmark';
-import { fetchLandmarksNearby } from '../services/wikimediaClient';
+import { searchLandmarksNearby } from '../services/wikimediaClient';
 
 interface UseLandmarksReturn {
   landmarks: Landmark[];
@@ -33,14 +33,14 @@ export function useLandmarks(
           // Use map center for CirrusSearch with nearcoord
           const { lat, lng } = mapBounds.center;
 
-          const landmarksData = await fetchLandmarksNearby({
+          const landmarksData = await searchLandmarksNearby({
             lat,
             lon: lng,
             radius: settings.radius,
             limit: settings.limit,
           });
 
-          console.log('Fetched landmarks:', landmarksData.length);
+          console.log('Fetched landmarks (search-only):', landmarksData.length);
           setLandmarks(landmarksData);
         } catch (err) {
           const errorMessage = err instanceof Error ? err.message : 'Failed to fetch landmarks';
