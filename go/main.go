@@ -117,6 +117,9 @@ func main() {
 	router.POST("/users", func(c *gin.Context) {
 		handlers.CreateUser(c, io)
 	})
+	router.PUT("/users/:user_id", func(c *gin.Context) {
+		handlers.UpdateUser(c, io)
+	})
 	router.DELETE("/users/:user_id", func(c *gin.Context) {
 		handlers.DeleteUser(c, io)
 	})
