@@ -7,3 +7,8 @@ export { AirportMarkers } from './AirportMarkers';
 export { CurrentLocationMarker } from './CurrentLocationMarker';
 export { LandmarkMarkers } from './LandmarkMarkers';
 export { DisableMapDrag } from './DisableMapDrag';
+<<<<<<< HEAD
+=======
+export { LandmarkListOverlay } from './LandmarkListOverlay';
+export { RouteLayer } from './RouteLayer';
+>>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)

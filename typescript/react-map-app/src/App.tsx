@@ -5,6 +5,7 @@ import { FaRegDotCircle } from 'react-icons/fa';
 import './App.css';
 import { Header } from './components/Header/Header';
 import { VideoCallPopup } from './components/VideoCall/VideoCallPopup';
+
 import {
   MapBoundsTracker,
   MapBoundsDisplay,
@@ -14,7 +15,15 @@ import {
   CurrentLocationMarker,
   LandmarkMarkers,
   DisableMapDrag,
+<<<<<<< HEAD
+=======
+  LandmarkListOverlay,
+  RouteLayer,
+>>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
 } from './components/Map';
+
+import { useLandmarks } from './hooks/useLandmarks';
+import { landmarkSettings } from './types/landmark';
 import { ChatWindow } from './components/Chat';
 import { LocationControl } from './components/LocationControl';
 import { DEFAULT_POSITION } from './utils/locationUtils';
@@ -45,6 +54,12 @@ function App() {
   const { socket, connected, users, chatMessages, addChatMessage } = useWebSocket(userNameRef);
   const { airports, mapBounds, setMapBounds } = useAirports();
   const { landmarks, isLoading: isLandmarksLoading } = useLandmarks(mapBounds, landmarkSettings);
+<<<<<<< HEAD
+=======
+  const [showLandmarkList, setShowLandmarkList] = useState<boolean>(false);
+  const [selectedLandmarkIds, setSelectedLandmarkIds] = useState<number[]>([]);
+  const [routeCoords, setRouteCoords] = useState<Array<{ lat: number; lon: number }>>([]);
+>>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
   const { currentLocation, initialMapCenter, handleStartTracking, handleStopTracking } =
     useLocationTracking({
       userName,
@@ -107,7 +122,11 @@ function App() {
             zoom={13}
             style={{ height: '600px', width: '100%' }}
           >
+<<<<<<< HEAD
             <DisableMapDrag disabled={isLandmarksLoading} />
+=======
+            <DisableMapDrag disabled={isLandmarksLoading || showLandmarkList} />
+>>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -118,6 +137,10 @@ function App() {
             <UserMarkers users={users.filter(u => u.id !== userName)} />
             <AirportMarkers airports={airports} />
             <LandmarkMarkers landmarks={landmarks} />
+<<<<<<< HEAD
+=======
+            <RouteLayer route={routeCoords} />
+>>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
           </MapContainer>
 
           {/* Move to Current Location Button */}
@@ -126,11 +149,7 @@ function App() {
               className="absolute top-4 right-4 z-[1000] bg-white/30 hover:bg-white/50 backdrop-blur-md text-gray-800 p-3 rounded-full border border-white/40 shadow-lg transition-all duration-300 transform hover:scale-105 disabled:opacity-50 disabled:cursor-not-allowed"
               onClick={() => {
                 if (currentLocation) {
-                  // Create a new object to trigger re-render even if same location
                   setTargetMapCenter({ ...currentLocation });
-                  console.log('Moving map to current location:', currentLocation);
-                } else {
-                  console.log('No current location available');
                 }
               }}
               title="Move to Current Location"
@@ -139,6 +158,36 @@ function App() {
               <FaRegDotCircle className="w-6 h-6" />
             </button>
           )}
+
+          {/* Landmark List Button - always visible */}
+          <button
+            className="absolute top-20 right-4 z-[1000] bg-white/30 hover:bg-white/50 backdrop-blur-md text-gray-800 p-3 rounded-full border border-white/40 shadow-lg transition-all duration-300 transform hover:scale-105"
+            onClick={() => setShowLandmarkList(true)}
+            title="Show Landmarks"
+          >
+            📍
+          </button>
+
+          {/* Landmark list overlay */}
+          <LandmarkListOverlay
+            isOpen={showLandmarkList}
+            landmarks={landmarks}
+            selectedIds={selectedLandmarkIds}
+            onChange={setSelectedLandmarkIds}
+            onClose={() => setShowLandmarkList(false)}
+            onRouteReady={async (points, vehicle) => {
+              try {
+                const { getRoute } = await import('./services/graphhopperClient');
+                const route = await getRoute(points, vehicle);
+                setRouteCoords(route);
+                // Close overlay after drawing route
+                setShowLandmarkList(false);
+              } catch (err: any) {
+                console.error('Route error', err);
+                alert(err?.message || String(err));
+              }
+            }}
+          />
         </div>
 
         {/* Chat Toggle Button */}

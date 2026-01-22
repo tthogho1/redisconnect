@@ -1,10 +1,15 @@
+<<<<<<< HEAD
 // Landmark type definitions for Wikimedia CirrusSearch API
 
+=======
+// Landmark型の定義
+>>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
 export interface Landmark {
   pageId: number;
   title: string;
   lat: number;
   lon: number;
+<<<<<<< HEAD
   thumbnailUrl: string | null;
   thumbnailWidth: number | null;
   thumbnailHeight: number | null;
@@ -75,3 +80,21 @@ export interface LandmarkSettings {
   radius: number; // meters (500-50000+ supported with CirrusSearch)
   limit: number; // count (1-50)
 }
+=======
+  thumbnailUrl?: string | null;
+  thumbnailWidth?: number | null;
+  thumbnailHeight?: number | null;
+  description?: string | null;
+  [key: string]: any;
+}
+
+export interface LandmarkSettings {
+  radius: number; // meters
+  limit: number; // max results
+}
+
+export const landmarkSettings: LandmarkSettings = {
+  radius: 50000, // 50km
+  limit: 10,
+};
+>>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)

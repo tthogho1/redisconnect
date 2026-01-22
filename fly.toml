@@ -16,6 +16,11 @@ primary_region = 'nrt'
   auto_stop_machines = 'stop'
   auto_start_machines = true
   min_machines_running = 0
+  # Enable WebSocket connections
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
 
   [[http_service.checks]]
     interval = '10s'
