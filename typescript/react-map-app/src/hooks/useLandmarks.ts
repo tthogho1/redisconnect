@@ -1,16 +1,11 @@
 import { useEffect, useState } from 'react';
 import { MapBounds } from '../types/map';
 import { Landmark, LandmarkSettings } from '../types/landmark';
-<<<<<<< HEAD
 import { searchLandmarksNearby } from '../services/wikimediaClient';
-=======
-import { fetchLandmarksInBounds } from '../services/hasuraClient';
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
 
 interface UseLandmarksReturn {
   landmarks: Landmark[];
   isLoading: boolean;
-<<<<<<< HEAD
   error: string | null;
 }
 
@@ -59,41 +54,10 @@ export function useLandmarks(
       fetchLandmarks();
     }
   }, [mapBounds, settings.radius, settings.limit]);
-=======
-}
-
-export function useLandmarks(
-  mapBounds: MapBounds | null,
-  settings: LandmarkSettings
-): UseLandmarksReturn {
-  const [landmarks, setLandmarks] = useState<Landmark[]>([]);
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-
-  useEffect(() => {
-    if (mapBounds) {
-      setIsLoading(true);
-      const fetchLandmarks = async () => {
-        const landmarksData = await fetchLandmarksInBounds({
-          minLat: mapBounds.south,
-          maxLat: mapBounds.north,
-          minLon: mapBounds.west,
-          maxLon: mapBounds.east,
-          settings,
-        });
-        setLandmarks(landmarksData);
-        setIsLoading(false);
-      };
-      fetchLandmarks();
-    }
-  }, [mapBounds, settings]);
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
 
   return {
     landmarks,
     isLoading,
-<<<<<<< HEAD
     error,
-=======
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
   };
 }
