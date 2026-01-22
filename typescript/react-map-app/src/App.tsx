@@ -1,7 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import { FaRegDotCircle } from 'react-icons/fa';
 import './App.css';
 import { Header } from './components/Header/Header';
 import { VideoCallPopup } from './components/VideoCall/VideoCallPopup';
@@ -15,15 +14,10 @@ import {
   CurrentLocationMarker,
   LandmarkMarkers,
   DisableMapDrag,
-<<<<<<< HEAD
-=======
   LandmarkListOverlay,
   RouteLayer,
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
 } from './components/Map';
 
-import { useLandmarks } from './hooks/useLandmarks';
-import { landmarkSettings } from './types/landmark';
 import { ChatWindow } from './components/Chat';
 import { LocationControl } from './components/LocationControl';
 import { DEFAULT_POSITION } from './utils/locationUtils';
@@ -43,6 +37,7 @@ function App() {
     radius: 10000,
     limit: 10,
   });
+  const [showChat, setShowChat] = useState<boolean>(false);
   const userNameRef = useRef<string>('');
 
   // Update userNameRef when userName changes
@@ -54,29 +49,26 @@ function App() {
   const { socket, connected, users, chatMessages, addChatMessage } = useWebSocket(userNameRef);
   const { airports, mapBounds, setMapBounds } = useAirports();
   const { landmarks, isLoading: isLandmarksLoading } = useLandmarks(mapBounds, landmarkSettings);
-<<<<<<< HEAD
-=======
   const [showLandmarkList, setShowLandmarkList] = useState<boolean>(false);
   const [selectedLandmarkIds, setSelectedLandmarkIds] = useState<number[]>([]);
   const [routeCoords, setRouteCoords] = useState<Array<{ lat: number; lon: number }>>([]);
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
   const { currentLocation, initialMapCenter, handleStartTracking, handleStopTracking } =
     useLocationTracking({
       userName,
       socket,
       intervalSeconds,
     });
+
+  // Chat hook
   const {
     chatInput,
     setChatInput,
     selectedUser,
     setSelectedUser,
-    showChat,
-    setShowChat,
     handleSendMessage,
   } = useChat({
-    userName,
     socket,
+    userName,
     addChatMessage,
   });
 
@@ -122,11 +114,7 @@ function App() {
             zoom={13}
             style={{ height: '600px', width: '100%' }}
           >
-<<<<<<< HEAD
-            <DisableMapDrag disabled={isLandmarksLoading} />
-=======
             <DisableMapDrag disabled={isLandmarksLoading || showLandmarkList} />
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
             <TileLayer
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -137,10 +125,7 @@ function App() {
             <UserMarkers users={users.filter(u => u.id !== userName)} />
             <AirportMarkers airports={airports} />
             <LandmarkMarkers landmarks={landmarks} />
-<<<<<<< HEAD
-=======
             <RouteLayer route={routeCoords} />
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
           </MapContainer>
 
           {/* Move to Current Location Button */}
@@ -155,7 +140,10 @@ function App() {
               title="Move to Current Location"
               disabled={!currentLocation}
             >
-              <FaRegDotCircle className="w-6 h-6" />
+              <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" fill="none"/>
+                <circle cx="12" cy="12" r="3" fill="currentColor"/>
+              </svg>
             </button>
           )}
 
@@ -175,7 +163,7 @@ function App() {
             selectedIds={selectedLandmarkIds}
             onChange={setSelectedLandmarkIds}
             onClose={() => setShowLandmarkList(false)}
-            onRouteReady={async (points, vehicle) => {
+            onRouteReady={async (points: Array<{ lat: number; lon: number }>, vehicle: 'car' | 'bike' | 'foot') => {
               try {
                 const { getRoute } = await import('./services/graphhopperClient');
                 const route = await getRoute(points, vehicle);

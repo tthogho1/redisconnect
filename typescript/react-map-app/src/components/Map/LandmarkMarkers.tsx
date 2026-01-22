@@ -1,21 +1,14 @@
-<<<<<<< HEAD
 import React, { useCallback, useState } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import { Landmark } from '../../types/landmark';
 import { createLandmarkIcon } from '../../utils/landmarkIcons';
 import { fetchLandmarkDetails } from '../../services/wikimediaClient';
-=======
-import React from 'react';
-import { Marker, Popup } from 'react-leaflet';
-import { Landmark } from '../../types/landmark';
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
 
 interface LandmarkMarkersProps {
   landmarks: Landmark[];
 }
 
 export const LandmarkMarkers: React.FC<LandmarkMarkersProps> = ({ landmarks }) => {
-<<<<<<< HEAD
   const [detailsMap, setDetailsMap] = useState<Record<number, Partial<Landmark>>>({});
 
   const loadDetails = useCallback(
@@ -85,22 +78,6 @@ export const LandmarkMarkers: React.FC<LandmarkMarkersProps> = ({ landmarks }) =
           </Marker>
         );
       })}
-=======
-  if (!landmarks || landmarks.length === 0) return null;
-  return (
-    <>
-      {landmarks.map(l => (
-        <Marker key={l.pageId} position={[l.lat, l.lon]}>
-          <Popup>
-            <div>
-              <strong>{l.title}</strong>
-              {l.description && <div>{l.description}</div>}
-              {l.image && <img src={l.image} alt={l.title} style={{ maxWidth: 120 }} />}
-            </div>
-          </Popup>
-        </Marker>
-      ))}
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
     </>
   );
 };
