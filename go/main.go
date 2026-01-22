@@ -2,7 +2,9 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"os"
+	"strings"
 	"sync"
 
 	socketio "github.com/doquangtan/socketio/v4"
@@ -92,9 +94,21 @@ func main() {
 
 	// CORS middleware
 	router.Use(func(c *gin.Context) {
+		 c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
+		 c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
+		 c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Origin")
+		 c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
+		 if c.Request.Method == "OPTIONS" {
+			  c.AbortWithStatus(204)
+			  return
+		 }
+		 c.Next()
+	})
+	router.Use(func(c *gin.Context) {
 		c.Writer.Header().Set("Access-Control-Allow-Origin", "*")
 		c.Writer.Header().Set("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS")
-		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+		c.Writer.Header().Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With, Origin")
+		c.Writer.Header().Set("Access-Control-Allow-Credentials", "true")
 		if c.Request.Method == "OPTIONS" {
 			c.AbortWithStatus(204)
 			return
@@ -102,10 +116,10 @@ func main() {
 		c.Next()
 	})
 
-	// Socket.IO endpoint
-	router.Any("/socket.io/*any", func(c *gin.Context) {
-		io.HttpHandler().ServeHTTP(c.Writer, c.Request)
-	})
+  //router.Any("/socket.io/*any", gin.WrapH(io.HttpHandler()))
+	// Serve static folder (after socket route)
+	// router.Static("/static", "./static/static")
+	// router.Static("/map", "./static")
 
 	// Health check endpoint for Fly.io
 	router.GET("/health", func(c *gin.Context) {
@@ -124,7 +138,8 @@ func main() {
 		handlers.DeleteUser(c, io)
 	})
 
-	// Start server
+	// Start server using combined handler
+	// Socket.IO is handled directly by net/http (bypasses Gin) to support WebSocket hijacking
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "5000"
@@ -135,7 +150,18 @@ func main() {
 	log.Printf("HTTP endpoints: GET/POST /users, DELETE /users/<id>")
 	log.Printf("Redis host: %s, port: %s", os.Getenv("REDIS_HOST"), os.Getenv("REDIS_PORT"))
 
-	if err := router.Run("0.0.0.0:" + port); err != nil {
+	combinedHandler := http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			// ✅ 修正: 末尾スラッシュ有無両対応
+			if strings.HasPrefix(r.URL.Path, "/socket.io") {
+					log.Printf("🔍 Socket.IO match: %s", r.URL.Path)  // デバッグ用
+					io.HttpHandler().ServeHTTP(w, r)
+					return
+			}
+			router.ServeHTTP(w, r)
+	})
+
+	if err := http.ListenAndServe("0.0.0.0:"+port, combinedHandler); err != nil {
 		log.Fatal(err)
 	}
+
 }

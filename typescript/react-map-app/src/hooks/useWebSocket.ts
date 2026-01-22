@@ -20,10 +20,24 @@ export function useWebSocket(userNameRef: React.RefObject<string>): UseWebSocket
   const socketRef = useRef<Socket | null>(null);
 
   useEffect(() => {
-    const websocketUrl = process.env.REACT_APP_WEBSOCKET_URL || 'http://localhost:5000';
+    // Prefer the explicit env var set at build/dev time. If it's missing (for example
+    // when serving a static build without baked env), fall back to the page origin
+    // so the client connects to the same host that served the app.
+    const envUrl = process.env.REACT_APP_WEBSOCKET_URL;
+    const origin =
+      typeof window !== 'undefined' && window.location ? window.location.origin : undefined;
+    console.log('WebSocket env var:', envUrl);
+    console.log('Page origin:', origin);
+    // Prefer explicit environment variable. If not set, connect back to the page origin.
+    // Do NOT force a localhost:5000 fallback here — that causes unexpected attempts
+    // to reach a non-running local server when served from a different origin.
+    const websocketUrl = envUrl && envUrl.trim() !== '' ? envUrl : origin;
     console.log('🔌 Connecting to Socket.IO server:', websocketUrl);
 
-    const socket = io(websocketUrl, {
+    // The Go socket.io library (doquangtan/socketio) only supports websocket transport,
+    // NOT polling. Force websocket-only to avoid the server returning static file listings.
+    const socket = io(websocketUrl || undefined, {
+      path: '/socket.io/',
       transports: ['websocket'],
       upgrade: false,
     });
@@ -32,6 +46,21 @@ export function useWebSocket(userNameRef: React.RefObject<string>): UseWebSocket
     socket.on('connect', () => {
       console.log('Connected to WebSocket server');
       setConnected(true);
+      // If we have a current user name, register it with the server so it can bind
+      // the socket to the user immediately after connect.
+      try {
+        const id = userNameRef?.current;
+        if (id) {
+          socket.emit('register', { id });
+          console.log('Sent register for user:', id);
+        }
+      } catch (err) {
+        console.warn('Register emit failed', err);
+      }
+    });
+
+    socket.on('connect_error', (err: any) => {
+      console.error('WebSocket connect_error', err);
     });
 
     socket.on('disconnect', () => {
