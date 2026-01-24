@@ -35,11 +35,13 @@ export function MapBoundsDisplay({
 
   const handleRadiusChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Math.min(Math.max(Number(e.target.value), 1000), 100000);
+    console.log('MapBoundsDisplay: radius changed ->', value);
     onLandmarkSettingsChange({ ...landmarkSettings, radius: value });
   };
 
   const handleLimitChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = Math.min(Math.max(Number(e.target.value), 1), 200);
+    console.log('MapBoundsDisplay: limit changed ->', value);
     onLandmarkSettingsChange({ ...landmarkSettings, limit: value });
   };
 

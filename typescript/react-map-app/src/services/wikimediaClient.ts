@@ -28,9 +28,9 @@ function calculateBoundingBox(lat: number, lon: number, radiusMeters: number): B
 export async function searchLandmarksNearby(params: LandmarkQueryParams): Promise<Landmark[]> {
   const { lat, lon, boundingBox, radius = 10000, limit = 10 } = params;
   const bbox = boundingBox || calculateBoundingBox(lat, lon, radius);
-
-  const searchQuery = `nearcoord:${Math.round(radius / 1000)}km,${lat},${lon} hastemplate:"Coord"`;
-  const gsrlimit = Math.min(limit, 50).toString();
+  // Cirrus search: request up to `limit` results and also request coordinates for those pages
+  const searchQuery = `nearcoord:${Math.round(radius / 1000)}km,${lat},${lon}`; // loosened filter to increase hits
+  const gsrlimit = Math.min(limit, 500).toString();
 
   const searchParams = new URLSearchParams({
     action: 'query',
@@ -38,6 +38,7 @@ export async function searchLandmarksNearby(params: LandmarkQueryParams): Promis
     gsrsearch: searchQuery,
     gsrlimit,
     prop: 'coordinates|description',
+    colimit: gsrlimit,
     format: 'json',
     origin: '*',
   });

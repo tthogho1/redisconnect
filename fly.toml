@@ -1,0 +1,20 @@
+# fly.toml app configuration file for Go WebSocket server with React frontend
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+
+app = 'redisconnect-go'
+primary_region = 'nrt'
+
+# fly.toml cleaned to remove sensitive values. Set secrets using `fly secrets set` instead.
+[build]
+  dockerfile = 'Dockerfile'
+  # Use build args if you need to inject values at build time; avoid storing keys here.
+  [build.args]
+    # REACT_APP_GRAPH_HOPPER_API_KEY = "<set via fly deploy --build-arg or CI>"
+    # REACT_APP_GRAPH_HOPPER_BASE_URL = "https://graphhopper.com/api/1"
+
+[env]
+  PORT = '5000'
+  REACT_APP_WEBSOCKET_URL="http://localhost:5000"
+  REACT_APP_SIGNALING_URL="https://gosignaling-app.fly.dev/connect"
+  REACT_APP_HIGMA_ICON_PATH="/map/channels4_profile.jpg"
+  # Set secrets via `fly secrets set NAME=value`
