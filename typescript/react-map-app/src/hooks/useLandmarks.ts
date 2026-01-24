@@ -24,6 +24,7 @@ export function useLandmarks(
 
   // Fetch landmarks when map bounds change (same trigger as airports)
   useEffect(() => {
+    console.log('useLandmarks effect:', { mapBounds, settings });
     if (mapBounds) {
       const fetchLandmarks = async () => {
         setIsLoading(true);
@@ -32,6 +33,13 @@ export function useLandmarks(
         try {
           // Use map center for CirrusSearch with nearcoord
           const { lat, lng } = mapBounds.center;
+
+          console.log('useLandmarks: fetching with', {
+            lat,
+            lon: lng,
+            radius: settings.radius,
+            limit: settings.limit,
+          });
 
           const landmarksData = await searchLandmarksNearby({
             lat,

@@ -54,6 +54,7 @@ export function LandmarkListOverlay({
 
   return (
     <>
+      <style>{`.landmark-list-scroll::-webkit-scrollbar{width:10px}.landmark-list-scroll::-webkit-scrollbar-track{background:transparent}.landmark-list-scroll::-webkit-scrollbar-thumb{background:rgba(107,114,128,0.6);border-radius:6px}.landmark-list-scroll{scrollbar-width:thin;scrollbar-color:rgba(107,114,128,0.6) transparent}`}</style>
       {/* Backdrop */}
       <div className="fixed inset-0 bg-black/30 z-[1100]" onClick={() => onClose()} />
 
@@ -73,7 +74,7 @@ export function LandmarkListOverlay({
           </button>
         </div>
 
-        <div className="p-3 overflow-auto flex-1">
+        <div className="p-3 overflow-auto flex-1 landmark-list-scroll">
           {landmarks.length === 0 ? (
             <div className="text-sm text-gray-500">No landmarks</div>
           ) : (
