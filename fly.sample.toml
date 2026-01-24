@@ -1,0 +1,47 @@
+# fly.toml sample (sensitive values removed)
+# Copy this file to `fly.toml` and fill in secrets locally or use `fly secrets set`.
+
+app = 'redisconnect-go'
+primary_region = 'nrt'
+
+[build]
+  dockerfile = 'Dockerfile'
+
+[env]
+  PORT = '5000'
+  REACT_APP_WEBSOCKET_URL = "http://localhost:5000"
+  REACT_APP_SIGNALING_URL = "https://gosignaling-app.fly.dev/connect"
+  REACT_APP_HIGMA_ICON_PATH = "/map/channels4_profile.jpg"
+  REACT_APP_HASURA_ENDPOINT = "https://your-hasura-endpoint.example/v1/graphql"
+  REACT_APP_HASURA_ADMIN_SECRET = "" # set via `fly secrets set REACT_APP_HASURA_ADMIN_SECRET=...`
+  REACT_APP_GRAPH_HOPPER_API_KEY = "" # set via `fly secrets set REACT_APP_GRAPH_HOPPER_API_KEY=...`
+  REACT_APP_GRAPH_HOPPER_BASE_URL = "https://graphhopper.com/api/1"
+
+  REDIS_HOST = "" # set via `fly secrets set REDIS_HOST=...`
+  REDIS_PORT = ""
+  REDIS_USERNAME = ""
+  REDIS_PASSWORD = "" # set via `fly secrets set REDIS_PASSWORD=...`
+  HIGMA_API_URL = "https://your-higma-api.example/api/chat"
+
+[http_service]
+  internal_port = 5000
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  [http_service.concurrency]
+    type = "connections"
+    hard_limit = 100
+    soft_limit = 80
+
+  [[http_service.checks]]
+    interval = '10s'
+    timeout = '2s'
+    grace_period = '5s'
+    method = 'GET'
+    path = '/health'
+
+[[vm]]
+  memory = '256mb'
+  cpu_kind = 'shared'
+  cpus = 1

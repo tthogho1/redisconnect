@@ -1,20 +1,26 @@
-<<<<<<< HEAD
-// Landmark type definitions for Wikimedia CirrusSearch API
+// Landmark type definitions
 
-=======
-// Landmark型の定義
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
 export interface Landmark {
   pageId: number;
   title: string;
   lat: number;
   lon: number;
-<<<<<<< HEAD
-  thumbnailUrl: string | null;
-  thumbnailWidth: number | null;
-  thumbnailHeight: number | null;
-  description?: string;
+  thumbnailUrl?: string | null;
+  thumbnailWidth?: number | null;
+  thumbnailHeight?: number | null;
+  description?: string | null;
+  [key: string]: any;
 }
+
+export interface LandmarkSettings {
+  radius: number; // meters
+  limit: number; // max results
+}
+
+export const landmarkSettings: LandmarkSettings = {
+  radius: 50000,
+  limit: 10,
+};
 
 // CirrusSearch API response for search results
 export interface WikimediaCirrusSearchResponse {
@@ -62,39 +68,16 @@ export interface WikimediaPageDetailsResponse {
 }
 
 export interface BoundingBox {
-  north: number; // top latitude
-  south: number; // bottom latitude
-  east: number; // right longitude
-  west: number; // left longitude
+  north: number;
+  south: number;
+  east: number;
+  west: number;
 }
 
 export interface LandmarkQueryParams {
   lat: number;
   lon: number;
-  boundingBox?: BoundingBox; // For CirrusSearch bbox query
-  radius?: number; // fallback radius in meters (no 10km limit with CirrusSearch)
-  limit?: number; // default 10, max 500
+  boundingBox?: BoundingBox;
+  radius?: number;
+  limit?: number;
 }
-
-export interface LandmarkSettings {
-  radius: number; // meters (500-50000+ supported with CirrusSearch)
-  limit: number; // count (1-50)
-}
-=======
-  thumbnailUrl?: string | null;
-  thumbnailWidth?: number | null;
-  thumbnailHeight?: number | null;
-  description?: string | null;
-  [key: string]: any;
-}
-
-export interface LandmarkSettings {
-  radius: number; // meters
-  limit: number; // max results
-}
-
-export const landmarkSettings: LandmarkSettings = {
-  radius: 50000, // 50km
-  limit: 10,
-};
->>>>>>> 34edd2f (WIP: Temporary commit for ongoing work)
