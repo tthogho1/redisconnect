@@ -29,6 +29,22 @@ export function LandmarkListOverlay({
     return () => window.removeEventListener('keydown', onKey);
   }, [isOpen, onClose]);
 
+  const [topOffset, setTopOffset] = React.useState<number>(0);
+
+  useEffect(() => {
+    if (!isOpen) return;
+
+    function updateOffset() {
+      const header = document.querySelector('header');
+      const h = header ? header.getBoundingClientRect().height : 0;
+      setTopOffset(h);
+    }
+
+    updateOffset();
+    window.addEventListener('resize', updateOffset);
+    return () => window.removeEventListener('resize', updateOffset);
+  }, [isOpen]);
+
   // Hook must be called unconditionally to satisfy rules-of-hooks
   const [vehicle, setVehicle] = React.useState<'car' | 'bike' | 'foot'>('car');
 
@@ -60,7 +76,8 @@ export function LandmarkListOverlay({
 
       {/* Right side panel */}
       <div
-        className="fixed top-0 right-0 h-full w-80 bg-white shadow-lg z-[1200] flex flex-col"
+        className="fixed right-0 w-80 bg-white shadow-lg z-[1200] flex flex-col"
+        style={{ top: topOffset ? `${topOffset}px` : undefined, height: topOffset ? `calc(100% - ${topOffset}px)` : '100%' }}
         onClick={e => e.stopPropagation()}
       >
         <div className="flex items-center justify-between p-3 border-b">
