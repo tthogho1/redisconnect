@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react';
+import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { Marker, Popup } from 'react-leaflet';
 import { Landmark } from '../../types/landmark';
 import { createLandmarkIcon } from '../../utils/landmarkIcons';
@@ -10,6 +10,39 @@ interface LandmarkMarkersProps {
 
 export const LandmarkMarkers: React.FC<LandmarkMarkersProps> = ({ landmarks }) => {
   const [detailsMap, setDetailsMap] = useState<Record<number, Partial<Landmark>>>({});
+  const [fadingOutIds, setFadingOutIds] = useState<Set<number>>(new Set());
+  const [displayedLandmarks, setDisplayedLandmarks] = useState<Landmark[]>([]);
+  const prevLandmarksRef = useRef<Landmark[]>([]);
+
+  // Detect removed landmarks and trigger fade-out animation
+  useEffect(() => {
+    const currentIds = new Set(landmarks.map((l) => l.pageId));
+    const prevIds = new Set(prevLandmarksRef.current.map((l) => l.pageId));
+
+    // Find landmarks that were removed
+    const removedIds = new Set<number>();
+    prevIds.forEach((id) => {
+      if (!currentIds.has(id)) {
+        removedIds.add(id);
+      }
+    });
+
+    if (removedIds.size > 0) {
+      // Start fade-out animation for removed landmarks
+      setFadingOutIds(removedIds);
+
+      // After animation completes (500ms), remove from displayed list
+      setTimeout(() => {
+        setDisplayedLandmarks(landmarks);
+        setFadingOutIds(new Set());
+      }, 500);
+    } else {
+      // No fade-out needed, update immediately
+      setDisplayedLandmarks(landmarks);
+    }
+
+    prevLandmarksRef.current = landmarks;
+  }, [landmarks]);
 
   const loadDetails = useCallback(
     async (pageId: number) => {
@@ -22,15 +55,17 @@ export const LandmarkMarkers: React.FC<LandmarkMarkersProps> = ({ landmarks }) =
 
   return (
     <>
-      {landmarks.map(landmark => {
+      {displayedLandmarks.map(landmark => {
         const details = detailsMap[landmark.pageId] || {};
         const thumbnailUrl = details.thumbnailUrl ?? landmark.thumbnailUrl ?? null;
+        const isFadingOut = fadingOutIds.has(landmark.pageId);
 
         return (
           <Marker
             key={`landmark-${landmark.pageId}`}
             position={[landmark.lat, landmark.lon]}
             icon={createLandmarkIcon(thumbnailUrl)}
+            opacity={isFadingOut ? 0 : 1}
           >
             <Popup
               eventHandlers={{
