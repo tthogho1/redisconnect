@@ -112,7 +112,7 @@ function App() {
           <MapContainer
             center={DEFAULT_POSITION}
             zoom={13}
-            style={{ height: '600px', width: '100%' }}
+            style={{ height: '100vh', width: '100%' }}
           >
             <DisableMapDrag disabled={isLandmarksLoading || showLandmarkList} />
             <TileLayer

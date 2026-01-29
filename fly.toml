@@ -8,13 +8,48 @@ primary_region = 'nrt'
 [build]
   dockerfile = 'Dockerfile'
   # Use build args if you need to inject values at build time; avoid storing keys here.
-  [build.args]
+  [build.arßgs]
     # REACT_APP_GRAPH_HOPPER_API_KEY = "<set via fly deploy --build-arg or CI>"
     # REACT_APP_GRAPH_HOPPER_BASE_URL = "https://graphhopper.com/api/1"
 
 [env]
   PORT = '5000'
-  REACT_APP_WEBSOCKET_URL="http://localhost:5000"
+  REACT_APP_WEBSOCKET_URL="https://redisconnect-go.fly.dev"
   REACT_APP_SIGNALING_URL="https://gosignaling-app.fly.dev/connect"
   REACT_APP_HIGMA_ICON_PATH="/map/channels4_profile.jpg"
   # Set secrets via `fly secrets set NAME=value`
+
+# HTTP service configuration - REQUIRED for external connectivity
+[[services]]
+  internal_port = 5000
+  protocol = "tcp"
+  auto_stop_machines = true
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["http", "tls"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 250
+    soft_limit = 200
+
+  [[services.tcp_checks]]
+    interval = "15s"
+    timeout = "2s"
+    grace_period = "5s"
+
+  [[services.http_checks]]
+    interval = "10s"
+    timeout = "2s"
+    grace_period = "5s"
+    method = "GET"
+    path = "/health"
+    protocol = "http"
