@@ -96,7 +96,7 @@ export function LandmarkListOverlay({
             <div className="text-sm text-gray-500">No landmarks</div>
           ) : (
             <ul className="space-y-2">
-              {landmarks.map(l => (
+              {landmarks.map((l, index) => (
                 <li
                   key={`lm-${l.pageId}`}
                   className="flex items-center"
@@ -110,7 +110,18 @@ export function LandmarkListOverlay({
                       onChange={() => toggle(l.pageId)}
                       className="mr-3"
                     />
-                    <span className="text-sm text-gray-800">{l.title}</span>
+                    <span className="inline-flex items-center justify-center w-5 h-5 mr-2 text-xs font-bold text-white bg-blue-600 rounded-full">
+                      {index + 1}
+                    </span>
+                    <a
+                      href={`https://ja.wikipedia.org/wiki/${encodeURIComponent(l.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {l.title}
+                    </a>
                   </label>
                 </li>
               ))}
