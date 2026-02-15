@@ -23,6 +23,7 @@ import { LocationControl } from './components/LocationControl';
 import { DEFAULT_POSITION } from './utils/locationUtils';
 import { useWebSocket, useLocationTracking, useChat, useAirports, useLandmarks } from './hooks';
 import { LandmarkSettings } from './types/landmark';
+import { summarizeLandmarks, SummarizeResponseItem } from './services/summarizeClient';
 
 const SIGNALING_URL = process.env.REACT_APP_SIGNALING_URL || 'ws://localhost:8080/ws';
 
@@ -52,6 +53,8 @@ function App() {
   const [showLandmarkList, setShowLandmarkList] = useState<boolean>(false);
   const [selectedLandmarkIds, setSelectedLandmarkIds] = useState<number[]>([]);
   const [routeCoords, setRouteCoords] = useState<Array<{ lat: number; lon: number }>>([]);
+  const [summaries, setSummaries] = useState<SummarizeResponseItem[] | null>(null);
+  const [summarizing, setSummarizing] = useState<boolean>(false);
   const { currentLocation, initialMapCenter, handleStartTracking, handleStopTracking } =
     useLocationTracking({
       userName,
@@ -175,6 +178,18 @@ function App() {
                 alert(err?.message || String(err));
               }
             }}
+            onSummarize={async (landmarks, selectedIds) => {
+              setSummarizing(true);
+              try {
+                const results = await summarizeLandmarks(landmarks, selectedIds);
+                setSummaries(results);
+              } catch (e: any) {
+                alert(e.message || 'Summarize failed');
+              } finally {
+                setSummarizing(false);
+              }
+            }}
+            summarizing={summarizing}
           />
         </div>
 
@@ -196,6 +211,44 @@ function App() {
           >
             📹 {showVideoCall ? 'Hide Video' : 'Video Call'}
           </button>
+        )}
+
+        {/* Summary Modal - Centered on map */}
+        {summaries && (
+          <>
+            {/* Backdrop */}
+            <div
+              className="fixed inset-0 bg-black/40 z-[1500]"
+              onClick={() => setSummaries(null)}
+            />
+            {/* Modal */}
+            <div className="fixed inset-0 flex items-center justify-center z-[1600] pointer-events-none">
+              <div className="bg-white rounded-lg shadow-2xl p-6 max-w-2xl w-full max-h-[80vh] overflow-hidden flex flex-col pointer-events-auto relative mx-4">
+                <button
+                  className="absolute top-3 right-3 text-gray-500 hover:text-gray-800 text-2xl leading-none"
+                  onClick={() => setSummaries(null)}
+                >
+                  ✕
+                </button>
+                <h2 className="text-xl font-bold mb-4 text-gray-800">Landmark Summaries</h2>
+                <div className="space-y-4 overflow-auto flex-1">
+                  {summaries.map((s) => (
+                    <div key={s.url} className="border rounded-lg p-4 bg-gray-50 hover:bg-gray-100 transition">
+                      <p className="font-semibold text-sm text-blue-600 truncate mb-2">
+                        <a href={s.url} target="_blank" rel="noopener noreferrer" className="hover:underline">
+                          {s.url}
+                        </a>
+                      </p>
+                      <p className="text-gray-800 whitespace-pre-wrap leading-relaxed">{s.summary}</p>
+                      <p className="mt-2 text-xs text-gray-500">
+                        {s.token_count} / {s.target_tokens} tokens
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
         )}
 
         {/* Chat Window */}

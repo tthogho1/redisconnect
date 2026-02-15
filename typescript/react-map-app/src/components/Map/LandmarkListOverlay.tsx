@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { Landmark } from '../../types/landmark';
+import { LandmarkActionPanel } from './LandmarkActionPanel';
 
 interface LandmarkListOverlayProps {
   isOpen: boolean;
@@ -11,6 +12,8 @@ interface LandmarkListOverlayProps {
     coords: Array<{ lat: number; lon: number }>,
     vehicle: 'car' | 'bike' | 'foot'
   ) => void;
+  onSummarize?: (landmarks: Landmark[], selectedIds: number[]) => void;
+  summarizing?: boolean;
 }
 
 export function LandmarkListOverlay({
@@ -20,6 +23,8 @@ export function LandmarkListOverlay({
   onChange,
   onClose,
   onRouteReady,
+  onSummarize,
+  summarizing = false,
 }: LandmarkListOverlayProps) {
   useEffect(() => {
     function onKey(e: KeyboardEvent) {
@@ -96,7 +101,7 @@ export function LandmarkListOverlay({
             <div className="text-sm text-gray-500">No landmarks</div>
           ) : (
             <ul className="space-y-2">
-              {landmarks.map(l => (
+              {landmarks.map((l, index) => (
                 <li
                   key={`lm-${l.pageId}`}
                   className="flex items-center"
@@ -110,7 +115,18 @@ export function LandmarkListOverlay({
                       onChange={() => toggle(l.pageId)}
                       className="mr-3"
                     />
-                    <span className="text-sm text-gray-800">{l.title}</span>
+                    <span className="inline-flex items-center justify-center w-5 h-5 mr-2 text-xs font-bold text-white bg-blue-600 rounded-full">
+                      {index + 1}
+                    </span>
+                    <a
+                      href={`https://en.wikipedia.org/wiki/${encodeURIComponent(l.title)}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      {l.title}
+                    </a>
                   </label>
                 </li>
               ))}
@@ -118,59 +134,16 @@ export function LandmarkListOverlay({
           )}
         </div>
 
-        <div className="p-3 border-t space-y-3">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Mode</label>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="vehicle"
-                  value="car"
-                  checked={vehicle === 'car'}
-                  onChange={() => setVehicle('car')}
-                />
-                <span>Car</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="vehicle"
-                  value="bike"
-                  checked={vehicle === 'bike'}
-                  onChange={() => setVehicle('bike')}
-                />
-                <span>Bike</span>
-              </label>
-              <label className="flex items-center gap-2">
-                <input
-                  type="radio"
-                  name="vehicle"
-                  value="foot"
-                  checked={vehicle === 'foot'}
-                  onChange={() => setVehicle('foot')}
-                />
-                <span>Foot</span>
-              </label>
-            </div>
-          </div>
-
-          <div className="flex items-center justify-between">
-            <button
-              onClick={handleCheckRoute}
-              className="px-3 py-2 bg-green-600 text-white rounded hover:bg-green-700"
-            >
-              Check Route
-            </button>
-
-            <button
-              onClick={onClose}
-              className="px-3 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-            >
-              Close
-            </button>
-          </div>
-        </div>
+        <LandmarkActionPanel
+          landmarks={landmarks}
+          selectedIds={selectedIds}
+          vehicle={vehicle}
+          onVehicleChange={setVehicle}
+          onCheckRoute={handleCheckRoute}
+          onClose={onClose}
+          onSummarize={onSummarize}
+          summarizing={summarizing}
+        />
       </div>
     </>
   );

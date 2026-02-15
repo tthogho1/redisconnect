@@ -55,7 +55,7 @@ export const LandmarkMarkers: React.FC<LandmarkMarkersProps> = ({ landmarks }) =
 
   return (
     <>
-      {displayedLandmarks.map(landmark => {
+      {displayedLandmarks.map((landmark, index) => {
         const details = detailsMap[landmark.pageId] || {};
         const thumbnailUrl = details.thumbnailUrl ?? landmark.thumbnailUrl ?? null;
         const isFadingOut = fadingOutIds.has(landmark.pageId);
@@ -64,7 +64,7 @@ export const LandmarkMarkers: React.FC<LandmarkMarkersProps> = ({ landmarks }) =
           <Marker
             key={`landmark-${landmark.pageId}`}
             position={[landmark.lat, landmark.lon]}
-            icon={createLandmarkIcon(thumbnailUrl)}
+            icon={createLandmarkIcon(thumbnailUrl, index + 1)}
             opacity={isFadingOut ? 0 : 1}
           >
             <Popup
