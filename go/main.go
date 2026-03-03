@@ -138,6 +138,9 @@ func main() {
 		handlers.DeleteUser(c, io)
 	})
 
+	// Fetch landmarks in bounds (Wikimedia)
+	router.POST("/fetchlandmarks", handlers.FetchLandmarks)
+
 	// Summarize endpoint (proxy to HuggingFace)
 	router.POST("/summarize", handlers.Summarize)
 
