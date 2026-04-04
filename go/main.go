@@ -141,6 +141,15 @@ func main() {
 	// Fetch landmarks in bounds (Wikimedia)
 	router.POST("/fetchlandmarks", handlers.FetchLandmarks)
 
+	// Search landmarks near a coordinate (Wikimedia)
+	router.POST("/searchlandmarksnearby", handlers.SearchLandmarksNearby)
+
+	// Fetch details for a single landmark by pageId (Wikimedia)
+	router.POST("/fetchlandmarkdetails", handlers.FetchLandmarkDetails)
+
+	// Fetch airports within a bounding box (Hasura GraphQL)
+	router.POST("/fetchairportsinbounds", handlers.FetchAirportsInBounds)
+
 	// Summarize endpoint (proxy to HuggingFace)
 	router.POST("/summarize", handlers.Summarize)
 

@@ -1,7 +1,7 @@
 import React from 'react';
 import { Marker, Popup } from 'react-leaflet';
-import { User } from '../../types/user';
-import { getUserIcon } from '../../utils/mapIcons';
+import { User } from '../../../types/user';
+import { getUserIcon } from '../../../utils/mapIcons';
 
 interface UserMarkersProps {
   users: User[];

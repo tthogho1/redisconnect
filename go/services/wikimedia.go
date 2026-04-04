@@ -77,6 +77,8 @@ func SearchLandmarksNearby(ctx context.Context, params models.LandmarkQueryParam
 	if err != nil {
 		return nil, fmt.Errorf("wikimedia: build request: %w", err)
 	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "redisconnect/0.1 (github.com/tthogho1/redisconnect; contact:tthogho1@gmail.com)")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -131,6 +133,8 @@ func FetchLandmarkDetails(ctx context.Context, pageID int64) (*models.Landmark, 
 	if err != nil {
 		return nil, fmt.Errorf("wikimedia: build request: %w", err)
 	}
+	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "redisconnect/0.1 (github.com/tthogho1/redisconnect; contact:tthogho1@gmail.com)")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

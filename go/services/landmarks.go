@@ -4,10 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io"
+	"log"
 	"math"
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 
 	"github.com/tthogho1/redisconnect/go/models"
 )
@@ -36,6 +39,9 @@ func FetchLandmarksInBounds(ctx context.Context, vars models.FetchLandmarksInBou
 		limit = 50
 	}
 
+	log.Printf("FetchLandmarksInBounds: vars=%+v center=(%f,%f) radiusMeters=%d radiusKm=%d limit=%d",
+		vars, centerLat, centerLon, radiusMeters, radiusKm, limit)
+
 	gsrsearch := fmt.Sprintf(
 		"nearcoord:%dkm,%f,%f hastemplate:\"Coord\"",
 		radiusKm,
@@ -56,11 +62,14 @@ func FetchLandmarksInBounds(ctx context.Context, vars models.FetchLandmarksInBou
 
 	reqURL := WikimediaBaseURL + "?" + q.Encode()
 
+	log.Printf("FetchLandmarksInBounds: reqURL=%s", reqURL)
+
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, reqURL, nil)
 	if err != nil {
 		return []models.Landmark{}, fmt.Errorf("landmarks: build request: %w", err)
 	}
 	req.Header.Set("Accept", "application/json")
+	req.Header.Set("User-Agent", "redisconnect/0.1 (github.com/tthogho1/redisconnect; contact:tthogho1@gmail.com)")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -68,9 +77,21 @@ func FetchLandmarksInBounds(ctx context.Context, vars models.FetchLandmarksInBou
 	}
 	defer resp.Body.Close()
 
+	// Read response body for logging and robust decode errors.
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return []models.Landmark{}, fmt.Errorf("landmarks: read response body: %w", err)
+	}
+
+	log.Printf("FetchLandmarksInBounds: http status=%d body=%s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
+
+	if resp.StatusCode != http.StatusOK {
+		return []models.Landmark{}, fmt.Errorf("landmarks: http %d: %s", resp.StatusCode, strings.TrimSpace(string(bodyBytes)))
+	}
+
 	var result wmResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return []models.Landmark{}, fmt.Errorf("landmarks: decode response: %w", err)
+	if err := json.Unmarshal(bodyBytes, &result); err != nil {
+		return []models.Landmark{}, fmt.Errorf("landmarks: decode response: %w; body=%s", err, strings.TrimSpace(string(bodyBytes)))
 	}
 
 	if result.Query == nil {
