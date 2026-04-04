@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import { MapContainer, TileLayer } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import './App.css';
@@ -16,13 +16,15 @@ import {
   DisableMapDrag,
   LandmarkListOverlay,
   RouteLayer,
+  MapClickHandler,
+  SetPointMarker,
 } from './components/Map';
 
 import { ChatWindow } from './components/Chat';
 import { LocationControl } from './components/LocationControl';
 import { DEFAULT_POSITION } from './utils/locationUtils';
 import { useWebSocket, useLocationTracking, useChat, useAirports, useLandmarks } from './hooks';
-import { LandmarkSettings } from './types/landmark';
+import { LandmarkSettings, Landmark } from './types/landmark';
 import { summarizeLandmarks, SummarizeResponseItem } from './services/summarizeClient';
 
 const SIGNALING_URL = process.env.REACT_APP_SIGNALING_URL || 'ws://localhost:8080/ws';
@@ -52,6 +54,7 @@ function App() {
   const { landmarks, isLoading: isLandmarksLoading } = useLandmarks(mapBounds, landmarkSettings);
   const [showLandmarkList, setShowLandmarkList] = useState<boolean>(false);
   const [selectedLandmarkIds, setSelectedLandmarkIds] = useState<number[]>([]);
+  const [setPoint, setSetPoint] = useState<{ lat: number; lon: number; name?: string } | null>(null);
   const [routeCoords, setRouteCoords] = useState<Array<{ lat: number; lon: number }>>([]);
   const [summaries, setSummaries] = useState<SummarizeResponseItem[] | null>(null);
   const [summarizing, setSummarizing] = useState<boolean>(false);
@@ -74,6 +77,18 @@ function App() {
     userName,
     addChatMessage,
   });
+
+  // Merge manual set point into landmarks so it appears in markers and list
+  const allLandmarks = useMemo(() => {
+    if (!setPoint) return landmarks;
+    const manual: Landmark = {
+      pageId: -1,
+      title: setPoint.name || 'Set Point',
+      lat: setPoint.lat,
+      lon: setPoint.lon,
+    };
+    return [manual, ...landmarks];
+  }, [setPoint, landmarks]);
 
   return (
     <div className="App font-sans min-h-screen flex flex-col bg-gray-50">
@@ -127,8 +142,24 @@ function App() {
             <CurrentLocationMarker currentLocation={currentLocation} userName={userName} />
             <UserMarkers users={users.filter(u => u.id !== userName)} />
             <AirportMarkers airports={airports} />
-            <LandmarkMarkers landmarks={landmarks} />
+            <LandmarkMarkers landmarks={allLandmarks} />
             <RouteLayer route={routeCoords} />
+            <MapClickHandler
+              onSetPoint={(lat, lng, name) => {
+                // Do not call external routing services — set the map center and store the point locally
+                setRouteCoords([]);
+                const point = { lat, lon: lng, name: name || undefined };
+                setSetPoint(point);
+                setTargetMapCenter(point);
+              }}
+            />
+            <SetPointMarker
+              point={setPoint}
+              onClear={() => setSetPoint(null)}
+              onRename={(name) => {
+                setSetPoint((p) => (p ? { ...p, name } : p));
+              }}
+            />
           </MapContainer>
 
           {/* Move to Current Location Button */}
@@ -162,7 +193,7 @@ function App() {
           {/* Landmark list overlay */}
           <LandmarkListOverlay
             isOpen={showLandmarkList}
-            landmarks={landmarks}
+            landmarks={allLandmarks}
             selectedIds={selectedLandmarkIds}
             onChange={setSelectedLandmarkIds}
             onClose={() => setShowLandmarkList(false)}

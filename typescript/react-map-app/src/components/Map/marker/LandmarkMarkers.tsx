@@ -1,8 +1,8 @@
 import React, { useCallback, useState, useEffect, useRef } from 'react';
 import { Marker, Popup } from 'react-leaflet';
-import { Landmark } from '../../types/landmark';
-import { createLandmarkIcon } from '../../utils/landmarkIcons';
-import { fetchLandmarkDetails } from '../../services/wikimediaClient';
+import { Landmark } from '../../../types/landmark';
+import { createLandmarkIcon } from '../../../utils/landmarkIcons';
+import { fetchLandmarkDetails } from '../../../services/wikimediaClient';
 
 interface LandmarkMarkersProps {
   landmarks: Landmark[];

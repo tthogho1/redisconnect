@@ -1,7 +1,7 @@
 import React from 'react';
 import { Marker, Popup } from 'react-leaflet';
-import { Airport } from '../../types/airport';
-import { createAirportIcon } from '../../utils/airportIcons';
+import { Airport } from '../../../types/airport';
+import { createAirportIcon } from '../../../utils/airportIcons';
 
 interface AirportMarkersProps {
   airports: Airport[];
