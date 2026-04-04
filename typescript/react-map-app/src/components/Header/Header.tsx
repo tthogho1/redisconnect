@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 
 interface HeaderProps {
   connected: boolean;
@@ -8,6 +8,12 @@ interface HeaderProps {
   onToggleBounds: () => void;
   showLocationControl: boolean;
   onToggleLocationControl: () => void;
+  onAirportFilterChange?: (filters: {
+    large: boolean;
+    middle: boolean;
+    small: boolean;
+    heliport: boolean;
+  }) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,7 +24,35 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleBounds,
   showLocationControl,
   onToggleLocationControl,
+  onAirportFilterChange,
 }) => {
+  const [showAirportMenu, setShowAirportMenu] = useState(false);
+  const [airportFilters, setAirportFilters] = useState({
+    large: true,
+    middle: true,
+    small: true,
+    heliport: true,
+  });
+  const airportsRef = useRef<HTMLSpanElement | null>(null);
+  const popupRef = useRef<HTMLDivElement | null>(null);
+  const [menuPos, setMenuPos] = useState<{ top: number; left: number } | null>(null);
+
+  useEffect(() => {
+    onAirportFilterChange?.(airportFilters);
+  }, [airportFilters, onAirportFilterChange]);
+
+  function toggleAirportMenu() {
+    if (showAirportMenu) {
+      setShowAirportMenu(false);
+      return;
+    }
+    const el = airportsRef.current;
+    if (el) {
+      const r = el.getBoundingClientRect();
+      setMenuPos({ top: r.bottom + window.scrollY + 6, left: r.left + window.scrollX });
+    }
+    setShowAirportMenu(true);
+  }
   return (
     <header className="bg-gray-200 border-b border-gray-200 px-4 py-2 flex flex-wrap items-center justify-between sticky top-0 z-[2000] shadow-sm gap-y-2">
       <div className="flex items-center gap-3">
@@ -91,10 +125,67 @@ export const Header: React.FC<HeaderProps> = ({
             <span>👥</span> <strong>{userCount}</strong>{' '}
             <span className="hidden sm:inline">Users</span>
           </span>
-          <span className="flex items-center gap-1">
+          <span
+            className="flex items-center gap-1 cursor-pointer relative"
+            onClick={toggleAirportMenu}
+            ref={airportsRef}
+            role="button"
+            aria-haspopup="true"
+            aria-expanded={showAirportMenu}
+          >
             <span>✈️</span> <strong>{airportCount}</strong>{' '}
             <span className="hidden sm:inline">Airports</span>
           </span>
+          {showAirportMenu && menuPos && (
+            <div
+              ref={popupRef}
+              className="absolute z-[2200] bg-white rounded-md shadow-lg border border-gray-200 p-3 text-sm"
+              style={{ top: menuPos.top, left: menuPos.left, minWidth: 180 }}
+            >
+              <div className="mb-2 font-semibold flex items-center justify-between">
+                <span>Filter airports</span>
+                <button
+                  aria-label="Close"
+                  onClick={() => setShowAirportMenu(false)}
+                  className="text-gray-500 hover:text-gray-800 ml-2"
+                >
+                  ✕
+                </button>
+              </div>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={airportFilters.large}
+                  onChange={(e) => setAirportFilters(f => ({ ...f, large: e.target.checked }))}
+                />
+                Large
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={airportFilters.middle}
+                  onChange={(e) => setAirportFilters(f => ({ ...f, middle: e.target.checked }))}
+                />
+                Middle
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={airportFilters.small}
+                  onChange={(e) => setAirportFilters(f => ({ ...f, small: e.target.checked }))}
+                />
+                Small
+              </label>
+              <label className="flex items-center gap-2">
+                <input
+                  type="checkbox"
+                  checked={airportFilters.heliport}
+                  onChange={(e) => setAirportFilters(f => ({ ...f, heliport: e.target.checked }))}
+                />
+                Heliport
+              </label>
+            </div>
+          )}
         </div>
       </div>
     </header>

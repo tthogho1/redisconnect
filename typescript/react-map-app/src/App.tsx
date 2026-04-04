@@ -50,7 +50,24 @@ function App() {
 
   // Custom hooks for managing different concerns
   const { socket, connected, users, chatMessages, addChatMessage } = useWebSocket(userNameRef);
-  const { airports, mapBounds, setMapBounds } = useAirports();
+  // Airport filters state: Large, Middle, Small, Heliport
+  const [airportFilters, setAirportFilters] = useState<{ large: boolean; middle: boolean; small: boolean; heliport: boolean }>({
+    large: true,
+    middle: true,
+    small: true,
+    heliport: true,
+  });
+
+  const airportTypes = React.useMemo(() => {
+    const types: string[] = [];
+    if (airportFilters.large) types.push('large_airport');
+    if (airportFilters.middle) types.push('medium_airport');
+    if (airportFilters.small) types.push('small_airport');
+    if (airportFilters.heliport) types.push('heliport');
+    return types;
+  }, [airportFilters]);
+
+  const { airports, mapBounds, setMapBounds } = useAirports(airportTypes);
   const { landmarks, isLoading: isLandmarksLoading } = useLandmarks(mapBounds, landmarkSettings);
   const [showLandmarkList, setShowLandmarkList] = useState<boolean>(false);
   const [selectedLandmarkIds, setSelectedLandmarkIds] = useState<number[]>([]);
@@ -100,6 +117,9 @@ function App() {
         onToggleBounds={() => setShowBounds(!showBounds)}
         showLocationControl={showLocationControl}
         onToggleLocationControl={() => setShowLocationControl(!showLocationControl)}
+        onAirportFilterChange={(filters: { large: boolean; middle: boolean; small: boolean; heliport: boolean }) => {
+          setAirportFilters(filters);
+        }}
       />
 
       <main className="flex-1 p-5 max-w-[1920px] mx-auto w-full relative">
