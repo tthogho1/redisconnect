@@ -108,7 +108,7 @@ function App() {
   }, [setPoint, landmarks]);
 
   return (
-    <div className="App font-sans min-h-screen flex flex-col bg-gray-50">
+    <div className="App font-sans h-screen flex flex-col bg-gray-50 overflow-hidden">
       <Header
         connected={connected}
         userCount={users.length}
@@ -122,7 +122,7 @@ function App() {
         }}
       />
 
-      <main className="flex-1 p-5 max-w-[1920px] mx-auto w-full relative">
+      <main className="flex-1 overflow-hidden flex flex-col max-w-[1920px] mx-auto w-full">
         {/* Map Bounds Display */}
         {showBounds && (
           <MapBoundsDisplay
@@ -146,11 +146,17 @@ function App() {
           />
         )}
 
-        <div className="relative">
+        <div
+          className="relative flex-1 min-h-0"
+          onPointerDown={() => {
+            if (showBounds) setShowBounds(false);
+            if (showLocationControl) setShowLocationControl(false);
+          }}
+        >
           <MapContainer
             center={DEFAULT_POSITION}
             zoom={13}
-            style={{ height: '100vh', width: '100%' }}
+            style={{ height: '100%', width: '100%' }}
           >
             <DisableMapDrag disabled={isLandmarksLoading || showLandmarkList} />
             <TileLayer
