@@ -4,12 +4,20 @@ import { Landmark } from '../types/landmark';
 const HASURA_ENDPOINT = process.env.REACT_APP_HASURA_ENDPOINT || '';
 const HASURA_ADMIN_SECRET = process.env.REACT_APP_HASURA_ADMIN_SECRET || '';
 
-export async function fetchAirportsInBounds(variables: AirportsQueryVariables): Promise<Airport[]> {
+export async function fetchAirportsInBounds(
+  variables: AirportsQueryVariables,
+  airportTypes?: string[]
+): Promise<Airport[]> {
+  // Build a type filter clause: if `airportTypes` provided use _in, otherwise default to excluding "ort" and "closed"
+  const typeFilter = airportTypes && airportTypes.length > 0
+    ? `type: { _in: ${JSON.stringify(airportTypes)} }`
+    : `type: { _nin: ["ort", "closed"] }`;
+
   const query = `
     query {
       airports(
         where: {
-          type: { _nin: ["heliport", "closed"] }
+          ${typeFilter}
           latitude_deg: { _gte: ${variables.minLat}, _lte: ${variables.maxLat} }
           longitude_deg: { _gte: ${variables.minLon}, _lte: ${variables.maxLon} }
         }
