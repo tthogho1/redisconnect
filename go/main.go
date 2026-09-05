@@ -169,6 +169,20 @@ func main() {
 		// ✅ 修正: 末尾スラッシュ有無両対応
 		if strings.HasPrefix(r.URL.Path, "/socket.io") {
 			log.Printf("🔍 Socket.IO match: %s", r.URL.Path) // デバッグ用
+
+			// Fly.io's edge proxy (and some other reverse proxies) forward the
+			// Connection header as a combined value such as "keep-alive, Upgrade"
+			// instead of the plain "Upgrade" that browsers send directly.
+			// The vendored socketio library does an EXACT match against
+			// header["Connection"] (slices.Contains(header["Connection"], "Upgrade")),
+			// so a combined value silently fails the check and the library falls
+			// back to serving its embedded static client files instead of
+			// performing the WebSocket upgrade. Normalize the header here so the
+			// upgrade is correctly detected regardless of how the proxy formatted it.
+			if conn := r.Header.Get("Connection"); conn != "" && strings.Contains(strings.ToLower(conn), "upgrade") {
+				r.Header.Set("Connection", "Upgrade")
+			}
+
 			io.HttpHandler().ServeHTTP(w, r)
 			return
 		}
